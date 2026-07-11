@@ -18,7 +18,7 @@ const PM_ENVIRONMENT =
 
 export const SAMPLES: Sample[] = [
   {
-    label: 'OpenCollection YAML',
+    label: 'Hotel Booking API',
     sublabel: 'A gist-hosted sample collection',
     href: (pathname) => `${pathname}?gist=${GIST_ID}`
   },

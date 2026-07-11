@@ -7,21 +7,31 @@ or a public Postman collection, and renders it with the Bruno docs renderer. It
 also builds an "Open in Bruno" deeplink so a reader can open the same collection
 in the desktop app.
 
-The frontend is a zero-dependency Vite/TS static app. It loads the renderer bundle
-from the CDN at runtime and, for the Postman path, calls one serverless function.
+The frontend is a Vite + React (TypeScript) static app. It loads the renderer
+bundle from the CDN at runtime and, for the Postman path, calls one serverless
+function.
+
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for the folder layout, storage model, and
+data flow.
 
 ## How it works
 
-On load, `src/main.ts` runs:
+On load, `src/App.tsx` routes on the query string, in order:
 
-1. **Local upload?** If `?local=<slot>` is present, read the YAML from
-   `localStorage` and render it.
-2. **Parse the source** from the query string (`parseSource`).
-3. **No source?** Render the home page. The URL input accepts gist / GitHub repo /
-   OpenCollection YAML URLs, and a **Postman collection URL** (see below). There is
-   also a local file upload.
-4. **Otherwise** build candidate fetch URLs (gist first), fetch the first that
-   succeeds, record it in recent links, and mount the renderer.
+1. **Local upload?** If `?local=<key>` is present, read the YAML from IndexedDB
+   and render it (`LocalUploadView`).
+2. **Postman share?** If `?pm=…` is present, resolve it cache-first (`PostmanView`).
+3. **A gist/repo source?** Fetch the first candidate that succeeds (gist first),
+   record it in history, and mount the renderer (`SourceView`).
+4. **No source?** Render the home page (`HomePage`). The URL input accepts gist /
+   GitHub repo / OpenCollection YAML URLs and a **Postman collection URL** (see
+   below); there is also a local file upload. With no history yet, it shows a few
+   clickable **samples**.
+
+Each view renders `<DocsRenderer>`, which lazily loads the CDN bundle, mounts the
+renderer into a container node, and shows a floating **Back to home** button.
+Navigation between views is full-page
+(`window.location.assign`), which keeps every view shareable by URL.
 
 The renderer is loaded lazily from the CDN (`<CDN_BASE>/docs/index.{js,css}`) only
 when a collection renders, and the raw YAML is handed to it as a string.
@@ -39,7 +49,9 @@ parser), all URL-encoded:
 | `r` | short repo ref `org/repo`, expands to a GitHub repo URL | `?r=usebruno/collection` |
 | `git_url` | full GitHub repo URL (syncable) | |
 | `path` | optional subdirectory within a repo (monorepo) | `?r=org/repo&path=apis/users` |
-| `local` | browser-local upload slot, `1..5` | `?local=1` |
+| `local` | browser-local upload key (`upload:<uuid>`) | `?local=upload%3A…` |
+| `pm` | short Postman collection ref (the postman.com path), expands to the full URL | `?pm=/acme/ws/collection/ab12cd/orders` |
+| `pe` | short Postman environment ref, repeatable | `?pe=/acme/ws/environment/123-abcd` |
 
 Long forms (`git_url`, `gist_url`) win over short (`r`, `g`). A repo is a syncable
 source, a gist is a snapshot. Repo sources resolve to a raw `opencollection.yml`
@@ -50,14 +62,20 @@ Request deep-linking: `#/req/<id>` selects a specific request.
 
 Paste a public Postman collection URL (`https://www.postman.com/<workspace>/collection/<id>/<name>`)
 into the same home-page input. `isPostmanCollectionUrl` detects it and opens a
-modal that:
+modal to add optional Postman environment links. On submit the viewer navigates
+to a shareable short URL, `?pm=<collection>&pe=<env>…`, so the link reproduces
+the import when opened or shared. A non-collection Postman URL (e.g. an
+`…/environment/…` link) is rejected in the input, and environment fields must be
+`…/environment/…` URLs.
 
-- shows the detected collection URL,
-- lets you add optional environment links,
-- discloses that this path uses Bruno's server (unlike file uploads),
-- on submit, posts to the serverless function and renders the result.
+On load, `parsePostmanShareParams` reads `pm`/`pe`, then:
 
-Pipeline (server-side, in the function):
+1. Check the IndexedDB import cache (`storage/importCache.ts`), keyed by the
+   collection URL plus its environment URLs. On a hit, render immediately with no
+   server call (and bump its recency).
+2. On a miss, call the serverless function, cache the result, and render.
+
+The serverless pipeline:
 
 1. Resolve the collection uid. A short-id workspace URL carries no uid, so the
    function fetches the public page as a crawler and extracts the uid; a URL that
@@ -67,22 +85,33 @@ Pipeline (server-side, in the function):
 3. Map Postman's internal model to the v2.1 export shape (`api/lib/mapper.js`).
 4. Convert with `@usebruno/converters`: `postmanToBruno` + `postmanToBrunoEnvironment`,
    then `brunoToOpenCollection`.
-5. Return the OpenCollection document as YAML; the client stores it in a local slot
-   and renders it.
+5. Return the OpenCollection document as YAML.
+
+The rendered page shows a floating **Back to home** button. The page URL itself is
+the shareable link (`?pm=…&pe=…` for Postman, the source params for gist/repo);
+local uploads keep their `?local=<key>` URL, which is browser-local only.
 
 The fetch runs server-side because Postman's keyless `_api/*` endpoints send no
 CORS headers. The official `api.getpostman.com` requires a key and is not used, so
 no user key is needed. These are internal Postman endpoints, so treat them as
-undocumented and subject to change and to Postman's terms.
+undocumented and subject to change and to Postman's terms. A server-side SSRF guard
+(`assertPostmanHost`) allows only `postman.com` hosts before any user URL is fetched.
 
 ## Features
 
 - View OpenCollection collections from a GitHub gist or repo, client-side.
 - Import and view public Postman collections (plus optional environments), no key.
-- Browser-local upload: paste or drop a YAML file, kept in `localStorage` across up
-  to 5 slots (LRU eviction), viewable via `?local=<slot>`. Never sent to a server.
-- Recent links: the last 10 viewed sources, listed on the home page.
+- Browser-local upload: paste or drop a YAML file, kept in IndexedDB and viewable
+  via `?local=<key>`. Never sent to a server.
+- History: every viewed source (upload, link, Postman) is cached in IndexedDB, up
+  to 50 entries (least-recently-opened evicted). The home page lists the most
+  recent; "View all history" opens the full list as a second column, where each
+  entry can be removed or all cleared.
+- Converted collections are cached, so re-opening a link or Postman import skips
+  the fetch/convert step.
 - Open in Bruno deeplink; request-level deep-linking via `#/req/<id>`.
+- Sample collections on the empty home page (a gist YAML and a public Postman
+  collection with its environment) to try the viewer with one click.
 - Friendly error states, including a private-collection / CORS path.
 
 ## Serverless function
@@ -91,30 +120,30 @@ One function backs the Postman import, with the logic shared across hosts:
 
 - `api/lib/import-core.js`: the fetch + map + convert pipeline (host-agnostic).
 - `api/postman-import.js`: Vercel handler (`export default (req, res)`).
-- `netlify/functions/postman-import.mjs`: Netlify function (v2), served at
-  `/api/postman-import` via `config.path` (with a redirect fallback in `netlify.toml`).
+- `netlify/functions/postman-import.mjs`: Netlify function (v2). `netlify.toml`
+  redirects `/api/postman-import` to it.
 
 Both run on the Node runtime (required by `@usebruno/converters`), not Edge.
 
 ## Runtime dependencies
 
 - **Docs renderer** from the CDN at `<CDN_BASE>/docs/index.{js,css}`. Loaded at
-  runtime, not bundled. Set `CDN_BASE` in `src/main.ts`.
+  runtime, not bundled. Set `CDN_BASE` in `src/config.ts`.
 - **GitHub / GitLab-style raw endpoints** for gist and repo collection data
   (CORS-open, read in the browser).
 - **fetch.usebruno.com** for the Open in Bruno deeplink target.
 - The Postman import function calls Postman's internal `_api/*` endpoints
   server-side.
 
-Frontend has no production npm dependencies. The function depends on
-`@usebruno/converters` and `js-yaml`.
+The frontend's production dependencies are `react`, `react-dom`, and `idb`
+(IndexedDB wrapper). The function depends on `@usebruno/converters` and `js-yaml`.
 
 ## Local development
 
 ```bash
 npm install
 npm run dev      # Vite dev server, frontend only (no /api function)
-npm test         # vitest
+npm test         # vitest (uses fake-indexeddb for the storage layer)
 npm run build    # tsc + vite build
 ```
 
@@ -130,13 +159,13 @@ Plain `npm run dev` does not serve `/api/postman-import`.
 ## Deployment (Netlify)
 
 `netlify.toml` builds the Vite frontend to `dist` and serves the function from
-`netlify/functions`. The client calls `/api/postman-import`; the Netlify function's
-`config.path` (and a redirect fallback) map that path to it. Connect the repo in
-Netlify or run `netlify deploy --build --prod`. The function needs the Node runtime
-(default on Netlify Functions).
+`netlify/functions`. The client calls `/api/postman-import`; a `netlify.toml`
+redirect maps that path to the function. Connect the repo in Netlify or run
+`netlify deploy --build --prod`. The function needs the Node runtime (default on
+Netlify Functions).
 
 ## Notes
 
 - CORS applies only to Try-It execution inside the renderer and to the Postman
   `_api` fetch (handled server-side), not to viewing gist/repo collections.
-- `localStorage` keys use the legacy `share-app:` prefix.
+- All browser-local state lives in one IndexedDB database, `bruno-docs-viewer`.

@@ -23,6 +23,9 @@ export interface SourcePointers {
   path: string;
 }
 
+/** A source with no pointers, used for uploads and imported (sourceless) YAML. */
+export const EMPTY_SOURCE: SourcePointers = { gitUrl: '', gistUrl: '', gist: '', path: '' };
+
 export interface GistComponents {
   owner: string;
   gistId: string;

@@ -140,13 +140,71 @@ body,
   padding-top: 3.5rem;
 }
 
-.home-shell {
+.home-columns {
   width: 100%;
   max-width: 35rem;
+  display: flex;
+  justify-content: center;
 }
 
-.home--with-history .home-shell {
+.home--with-history .home-columns {
   max-width: 44rem;
+}
+
+.home-shell {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Two-column layout when the full history panel is open. */
+.home--history-open {
+  justify-content: flex-start;
+  padding-top: 3.5rem;
+}
+
+.home--history-open .home-columns {
+  max-width: 68rem;
+  align-items: flex-start;
+  gap: 2rem;
+}
+
+.home--history-open .home-shell {
+  flex: 1;
+}
+
+.home-history-panel {
+  flex-shrink: 0;
+  width: 28rem;
+  align-self: flex-start;
+  position: sticky;
+  top: 3.5rem;
+}
+
+.home-history-panel .home-recents-header {
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.home-history-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.home-history-close {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 0.875rem;
+  line-height: 1;
+  color: #9ca3af;
+  cursor: pointer;
+}
+
+.home-history-close:hover {
+  color: #374151;
 }
 
 .home-hero {
@@ -442,7 +500,14 @@ body,
   color: #374151;
 }
 
-.home-clear-history {
+.home-recents-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+.home-clear-history,
+.home-recents-link {
   padding: 0;
   font-size: 0.75rem;
   font-family: inherit;
@@ -451,6 +516,11 @@ body,
   border: none;
   cursor: pointer;
   white-space: nowrap;
+}
+
+.home-recents-link:hover {
+  color: #374151;
+  text-decoration: underline;
 }
 
 .home-clear-history:hover {
@@ -506,10 +576,22 @@ body,
 }
 
 .home-recent-subtitle {
+  display: flex;
+  gap: 0.25rem;
+  min-width: 0;
   font-size: 0.75rem;
   color: #6b7280;
+}
+
+.home-recent-url {
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.home-recent-time {
+  flex-shrink: 0;
   white-space: nowrap;
 }
 
@@ -531,9 +613,33 @@ body,
   text-decoration: underline;
 }
 
+.home-sample-arrow {
+  flex-shrink: 0;
+  color: #9ca3af;
+  font-size: 0.9375rem;
+}
+
+.home-recent-item:hover .home-sample-arrow {
+  color: var(--btn-primary-bg);
+}
+
+/* Stack the history panel under the main column before it gets cramped. */
+@media (max-width: 900px) {
+  .home--history-open .home-columns {
+    flex-direction: column;
+    align-items: stretch;
+    max-width: 35rem;
+  }
+
+  .home-history-panel {
+    width: 100%;
+    position: static;
+  }
+}
+
 @media (max-width: 640px) {
-  .home-shell,
-  .home--with-history .home-shell {
+  .home-columns,
+  .home--with-history .home-columns {
     max-width: 28rem;
   }
 

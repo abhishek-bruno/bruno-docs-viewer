@@ -1,14 +1,17 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { getRequestIdFromHash, type SourcePointers } from '../sources/sourceParams';
 import { loadRendererAssets, waitForRenderer } from './rendererAssets';
 
+type Phase = 'loading' | 'ready' | 'error';
+
 /**
- * Mounts the CDN docs renderer into a container node and shows a floating
- * "Back to home" action.
+ * Mounts the CDN docs renderer into a container node. The renderer bundle is
+ * downloaded lazily, so a spinner overlay stays up until it has mounted.
  */
 export function DocsRenderer({ text, source }: { text: string; source: SourcePointers }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const started = useRef(false);
+  const [phase, setPhase] = useState<Phase>('loading');
 
   useEffect(() => {
     // The renderer has no unmount API and the node persists for the page's
@@ -25,19 +28,37 @@ export function DocsRenderer({ text, source }: { text: string; source: SourcePoi
         gitCollectionUrl: source.gitUrl || undefined,
         initialRequestId: getRequestIdFromHash()
       });
-    })().catch(() => {
-      // Surfaced by the caller's error states; nothing to do here.
-    });
+      setPhase('ready');
+    })().catch(() => setPhase('error'));
   }, [text, source]);
 
   return (
-    <>
+    <div className="docs-root">
       <div id="opencollection-container" ref={containerRef} />
+
+      {phase === 'loading' && (
+        <div className="state state-overlay">
+          <div className="state-spinner" role="status" aria-label="Preparing docs" />
+          <p className="state-loading-message">Preparing docs…</p>
+          <p className="state-loading-hint">Loading the viewer. Just a moment.</p>
+        </div>
+      )}
+
+      {phase === 'error' && (
+        <div className="state state-overlay">
+          <p className="state-loading-message">Couldn't load the viewer</p>
+          <p className="state-loading-hint">The docs renderer failed to load. Check your connection and try again.</p>
+          <a className="btn btn-primary" href={window.location.pathname || '/'}>
+            Go to Home
+          </a>
+        </div>
+      )}
+
       <div className="viewer-actions">
         <a className="btn btn-secondary" href={window.location.pathname || '/'}>
           Back to home
         </a>
       </div>
-    </>
+    </div>
   );
 }

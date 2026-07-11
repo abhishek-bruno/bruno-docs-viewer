@@ -18,8 +18,20 @@ body,
   width: 100%;
 }
 
+.docs-root {
+  position: relative;
+  height: 100%;
+}
+
 #opencollection-container {
   height: 100%;
+}
+
+/* Covers the renderer container until the CDN bundle has mounted. */
+.state-overlay {
+  position: absolute;
+  inset: 0;
+  background: #f9fafb;
 }
 
 .state {
@@ -37,6 +49,36 @@ body,
   width: 72px;
   height: 72px;
   margin-bottom: 1rem;
+}
+
+.state-spinner {
+  width: 2.25rem;
+  height: 2.25rem;
+  margin-bottom: 1.25rem;
+  border: 3px solid #e5e7eb;
+  border-top-color: var(--btn-primary-bg);
+  border-radius: 50%;
+  animation: pm-spin 0.7s linear infinite;
+}
+
+.state-loading-message {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 0.375rem;
+}
+
+.state-loading-hint {
+  font-size: 0.8125rem;
+  color: #6b7280;
+  margin: 0;
+  max-width: 24rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .state-spinner {
+    animation-duration: 1.6s;
+  }
 }
 
 .state h1 {

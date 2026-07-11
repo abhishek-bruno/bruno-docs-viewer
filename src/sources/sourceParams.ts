@@ -204,6 +204,10 @@ export const appendSourceParams = (
     } else if (source.gistUrl) {
       params.set('gist_url', source.gistUrl);
     }
+
+    // A bare gist id has no shorter form; carry it through as-is so short-form
+    // URLs (history keys, share links) still round-trip.
+    if (source.gist) params.set('gist', source.gist);
   } else {
     if (source.gitUrl) params.set('git_url', source.gitUrl);
     if (source.gistUrl) params.set('gist_url', source.gistUrl);

@@ -82,6 +82,14 @@ describe('buildShareViewerUrl', () => {
     expect(url).toContain('.yml');
   });
 
+  it('carries a bare gist id through short-form URLs', () => {
+    const url = buildShareViewerUrl(
+      { gistUrl: '', gitUrl: '', gist: 'abc123', path: '' },
+      { baseUrl: 'https://share.usebruno.com', preferShort: true }
+    );
+    expect(url).toContain('gist=abc123');
+  });
+
   it('appends a readable per-segment deep-link hash', () => {
     const url = buildShareViewerUrl(
       { gistUrl: rawGistUrl, gitUrl, gist: '', path: '' },

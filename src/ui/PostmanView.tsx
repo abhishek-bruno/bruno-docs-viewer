@@ -39,7 +39,9 @@ export function PostmanView({ source }: { source: { collectionUrl: string; envir
     };
   }, [source.collectionUrl, source.environmentUrls.join(',')]);
 
-  if (state.status === 'loading') return <Loading message="Importing from Postman…" />;
+  if (state.status === 'loading') {
+    return <Loading message="Importing from Postman…" hint="Fetching and converting the collection. This can take a few seconds." />;
+  }
   if (state.status === 'error') {
     return <Message title="Couldn't import from Postman" body={state.message} action={{ type: 'go-home' }} />;
   }

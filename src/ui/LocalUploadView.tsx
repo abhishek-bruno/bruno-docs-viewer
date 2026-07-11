@@ -24,7 +24,7 @@ export function LocalUploadView({ uploadKey }: { uploadKey: string }) {
     };
   }, [uploadKey]);
 
-  if (state.status === 'loading') return <Loading />;
+  if (state.status === 'loading') return <Loading message="Loading collection…" hint="Reading it from your browser storage." />;
   if (state.status === 'missing') {
     return (
       <Message

@@ -6,10 +6,18 @@ export type MessageAction =
   | { type: 'go-home' }
   | { type: 'none' };
 
-export function Loading({ message = 'Loading collection…' }: { message?: string }) {
+export function Loading({
+  message = 'Loading collection…',
+  hint
+}: {
+  message?: string;
+  hint?: string;
+}) {
   return (
     <div className="state">
-      <p>{message}</p>
+      <div className="state-spinner" role="status" aria-label={message} />
+      <p className="state-loading-message">{message}</p>
+      {hint && <p className="state-loading-hint">{hint}</p>}
     </div>
   );
 }

@@ -30,7 +30,7 @@ export function SourceView({ source }: { source: SourcePointers }) {
     // A source object is stable for the page's life; key on its pointers.
   }, [source.gitUrl, source.gistUrl, source.gist, source.path]);
 
-  if (state.status === 'loading') return <Loading />;
+  if (state.status === 'loading') return <Loading message="Loading collection…" hint="Fetching the collection source." />;
 
   if (state.status === 'ready') {
     return <DocsRenderer text={state.text} source={source} />;

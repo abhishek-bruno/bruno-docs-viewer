@@ -22,5 +22,3 @@ export default async (req) => {
     return json({ ok: false, error: (err && err.message) || 'Import failed.' }, status);
   }
 };
-
-export const config = { path: '/api/postman-import' };

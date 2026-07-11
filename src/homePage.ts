@@ -139,7 +139,7 @@ export const renderHomePage = (
                 autocorrect="off"
                 autocapitalize="off"
                 spellcheck="false"
-                placeholder="Paste a gist, GitHub, Postman, or OpenCollection YAML URL"
+                placeholder="Paste a OpenCollection YAML URL or public Postman collection URL"
               />
               <button type="submit" class="btn btn-primary home-submit">View docs</button>
             </div>

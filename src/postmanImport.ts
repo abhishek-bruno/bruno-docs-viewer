@@ -76,7 +76,7 @@ export const openPostmanEnvModal = ({ collectionUrl, pathname }: { collectionUrl
 
     errorEl.hidden = true;
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Importing…';
+    submitBtn.innerHTML = '<span class="pm-spinner" aria-hidden="true"></span>Importing…';
 
     try {
       const res = await fetch(ENDPOINT, {

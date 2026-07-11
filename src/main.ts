@@ -37,10 +37,9 @@ const openInBrunoButton = (source: SourcePointers, variant: 'floating' | 'block'
   return `<a class="${cls}" href="${href}">Open in Bruno</a>`;
 };
 
-const goToHomeButton = (variant: 'floating' | 'block' = 'block'): string => {
+const goToHomeButton = (): string => {
   const href = window.location.pathname || '/';
-  const cls = variant === 'floating' ? 'btn btn-secondary floating home-floating-left' : 'btn btn-primary';
-  return `<a class="${cls}" href="${href}">Go to Home</a>`;
+  return `<a class="btn btn-primary" href="${href}">Go to Home</a>`;
 };
 
 type MessageAction =
@@ -158,17 +157,11 @@ const loadRendererAssets = (): Promise<void> => {
   return rendererAssetsPromise;
 };
 
-const mountDocs = async (
-  text: string,
-  source: SourcePointers,
-  { localSlot }: { localSlot?: number } = {}
-) => {
+const mountDocs = async (text: string, source: SourcePointers) => {
   await loadRendererAssets();
   const showOpenInBruno = hasAnySource(source);
-  const showGoHome = localSlot != null;
   app.innerHTML = `
     <div id="opencollection-container"></div>
-    ${showGoHome ? goToHomeButton('floating') : ''}
     ${showOpenInBruno ? openInBrunoButton(source, 'floating') : ''}
   `;
 
@@ -181,10 +174,10 @@ const mountDocs = async (
   });
 };
 
-const viewLocalUpload = async (yaml: string, localSlot: number) => {
+const viewLocalUpload = async (yaml: string) => {
   renderLoading();
   try {
-    await mountDocs(yaml, { gistUrl: '', gitUrl: '', gist: '', path: '' }, { localSlot });
+    await mountDocs(yaml, { gistUrl: '', gitUrl: '', gist: '', path: '' });
   } catch {
     renderMessage(
       'Couldn\'t load this collection',
@@ -209,7 +202,7 @@ const main = async () => {
       );
       return;
     }
-    await viewLocalUpload(yaml, localSlot);
+    await viewLocalUpload(yaml);
     return;
   }
 

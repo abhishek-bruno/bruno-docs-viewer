@@ -17,7 +17,7 @@ import {
 } from './localUpload';
 import { recordRecentLink } from './recentLinks';
 
-const CDN_BASE = 'https://cdn.usebruno.com';
+const CDN_BASE = 'https://staging.cdn.usebruno.com';
 
 type FetchErrorKind = 'not-found' | 'cors' | 'network' | 'unknown';
 

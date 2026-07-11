@@ -18,6 +18,7 @@ import {
   listRecentLinks,
   removeRecentLink
 } from './recentLinks';
+import { isPostmanCollectionUrl, openPostmanEnvModal } from './postmanImport';
 
 const LOGO_URL =
   'https://raw.githubusercontent.com/usebruno/mintlify-docs/main/logo/light.png';
@@ -138,7 +139,7 @@ export const renderHomePage = (
                 autocorrect="off"
                 autocapitalize="off"
                 spellcheck="false"
-                placeholder="Paste a gist, raw GitHub, or public HTTPS YAML URL"
+                placeholder="Paste a gist, GitHub, Postman, or OpenCollection YAML URL"
               />
               <button type="submit" class="btn btn-primary home-submit">View docs</button>
             </div>
@@ -242,7 +243,13 @@ export const renderHomePage = (
     event.preventDefault();
 
     const data = new FormData(form);
-    const yamlInput = String(data.get('yamlUrl') || '');
+    const yamlInput = String(data.get('yamlUrl') || '').trim();
+
+    if (isPostmanCollectionUrl(yamlInput)) {
+      errorEl.hidden = true;
+      openPostmanEnvModal({ collectionUrl: yamlInput, pathname });
+      return;
+    }
 
     const gistUrl = normalizeYamlDocumentUrl(yamlInput);
     if (!gistUrl) {

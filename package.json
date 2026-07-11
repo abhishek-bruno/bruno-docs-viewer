@@ -10,6 +10,10 @@
     "preview": "vite preview",
     "test": "vitest run"
   },
+  "dependencies": {
+    "@usebruno/converters": "^0.21.0",
+    "js-yaml": "^4.1.0"
+  },
   "devDependencies": {
     "typescript": "~5.7.2",
     "vite": "^6.2.0",

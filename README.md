@@ -2,117 +2,141 @@
 
 Public docs viewer for OpenCollection collections. Powers `share.usebruno.com`.
 
-It reads a collection from a URL (a GitHub gist or repo) or a browser-local
-upload and renders it with the Bruno docs renderer, entirely client-side. It also
-builds an "Open in Bruno" deeplink so a reader can open the same collection in the
-desktop app.
+It reads a collection from a URL (a GitHub gist or repo), a browser-local upload,
+or a public Postman collection, and renders it with the Bruno docs renderer. It
+also builds an "Open in Bruno" deeplink so a reader can open the same collection
+in the desktop app.
 
-Zero production dependencies. It is a static frontend: it fetches collection data
-from a URL and loads the renderer bundle from the CDN at runtime. It does not
-bundle the renderer or link to any other repo's source.
+The frontend is a zero-dependency Vite/TS static app. It loads the renderer bundle
+from the CDN at runtime and, for the Postman path, calls one serverless function.
 
 ## How it works
 
 On load, `src/main.ts` runs:
 
 1. **Local upload?** If `?local=<slot>` is present, read the YAML from
-   `localStorage` and render it. Nothing is uploaded to a server.
+   `localStorage` and render it.
 2. **Parse the source** from the query string (`parseSource`).
-3. **No source?** Render the home page so the user can paste a URL or upload a
-   file.
-4. **Otherwise** build an ordered list of candidate fetch URLs (gist first),
-   fetch the first that succeeds, record it in recent links, and mount the
-   renderer.
-5. **Errors** map to friendly states: not-found, private/CORS (offers Open in
-   Bruno), or a generic failure.
+3. **No source?** Render the home page. The URL input accepts gist / GitHub repo /
+   OpenCollection YAML URLs, and a **Postman collection URL** (see below). There is
+   also a local file upload.
+4. **Otherwise** build candidate fetch URLs (gist first), fetch the first that
+   succeeds, record it in recent links, and mount the renderer.
 
-The renderer is loaded lazily from the CDN (a `<link>` + `<script>`) only when a
-collection actually renders, and the raw YAML is handed to it as a string:
-
-```
-new Renderer({ target, opencollection: text, gitCollectionUrl, initialRequestId })
-```
+The renderer is loaded lazily from the CDN (`<CDN_BASE>/docs/index.{js,css}`) only
+when a collection renders, and the raw YAML is handed to it as a string.
 
 ## URL and params
 
-The source vocabulary is a shared contract, also used by `fetch.usebruno.com` and
-the Bruno desktop deeplink parser. All values are URL-encoded.
+Source vocabulary (shared with `fetch.usebruno.com` and the Bruno desktop deeplink
+parser), all URL-encoded:
 
 | Param | Meaning | Example |
 |---|---|---|
-| `g` | short gist ref `owner/gistId/fileName`, expands to a raw gist URL (no API) | `?g=jane/abc123/api.yml` |
-| `gist_url` | full raw gist URL (snapshot source) | |
+| `g` | short gist ref `owner/gistId/fileName`, expands to a raw gist URL | `?g=jane/abc123/api.yml` |
+| `gist_url` | full raw gist URL (snapshot) | |
 | `gist` | bare gist id, uses the gist API (parse only, not generated) | |
 | `r` | short repo ref `org/repo`, expands to a GitHub repo URL | `?r=usebruno/collection` |
-| `git_url` | full GitHub repo URL (syncable source) | |
+| `git_url` | full GitHub repo URL (syncable) | |
 | `path` | optional subdirectory within a repo (monorepo) | `?r=org/repo&path=apis/users` |
 | `local` | browser-local upload slot, `1..5` | `?local=1` |
 
-**Precedence:** long forms (`git_url`, `gist_url`) win over short forms (`r`, `g`)
-when both are present.
+Long forms (`git_url`, `gist_url`) win over short (`r`, `g`). A repo is a syncable
+source, a gist is a snapshot. Repo sources resolve to a raw `opencollection.yml`
+on `raw.githubusercontent.com`, honoring `/tree/<branch>/<subdir>` and `path`.
+Request deep-linking: `#/req/<id>` selects a specific request.
 
-**Source kinds** (`decideSource`, git-first): a repo is a *syncable* source, a
-gist is a *snapshot*. This decides the Open-in-Bruno behavior.
+## Import from Postman
 
-**Candidate resolution** (`renderSourceCandidates`, gist-first): the viewer tries
-each until one succeeds, which gives repo/gist resilience:
-1. `gist_url` fetched as raw text.
-2. `gist` fetched via the gist API (`api.github.com/gists/<id>`); large gists that
-   the API marks truncated fall back to their `raw_url`.
-3. `git_url` converted to a raw `opencollection.yml` on
-   `raw.githubusercontent.com`, honoring `/tree/<branch>/<subdir>` URLs and the
-   `path` param, with the ref defaulting to `HEAD`.
+Paste a public Postman collection URL (`https://www.postman.com/<workspace>/collection/<id>/<name>`)
+into the same home-page input. `isPostmanCollectionUrl` detects it and opens a
+modal that:
 
-**Deep-linking:** `#/req/<id>` selects a specific request. The renderer reads it on
-mount (`getRequestIdFromHash`); an in-session hash change triggers a reload so the
-requested item is selected.
+- shows the detected collection URL,
+- lets you add optional environment links,
+- discloses that this path uses Bruno's server (unlike file uploads),
+- on submit, posts to the serverless function and renders the result.
 
-**Share URL builder** (`buildShareViewerUrl`): produces short-form URLs by default
-(`r=`, `g=`), placing the repo ref before the gist ref so a deep-link hash sits
-after the `.yml`.
+Pipeline (server-side, in the function):
 
-**Open in Bruno** (`buildFetchDeeplinkUrl`): passes all present pointers through to
-`fetch.usebruno.com`.
+1. Resolve the collection uid. A short-id workspace URL carries no uid, so the
+   function fetches the public page as a crawler and extracts the uid; a URL that
+   already carries a uid is used directly. Environment URLs carry the uid inline.
+2. Fetch the collection and environments keyless from Postman's internal
+   `_api/collection/{uid}?populate=true` and `_api/environment/{uid}` endpoints.
+3. Map Postman's internal model to the v2.1 export shape (`api/lib/mapper.js`).
+4. Convert with `@usebruno/converters`: `postmanToBruno` + `postmanToBrunoEnvironment`,
+   then `brunoToOpenCollection`.
+5. Return the OpenCollection document as YAML; the client stores it in a local slot
+   and renders it.
+
+The fetch runs server-side because Postman's keyless `_api/*` endpoints send no
+CORS headers. The official `api.getpostman.com` requires a key and is not used, so
+no user key is needed. These are internal Postman endpoints, so treat them as
+undocumented and subject to change and to Postman's terms.
 
 ## Features
 
-- View OpenCollection collections from a GitHub gist or repo, fully client-side.
+- View OpenCollection collections from a GitHub gist or repo, client-side.
+- Import and view public Postman collections (plus optional environments), no key.
 - Browser-local upload: paste or drop a YAML file, kept in `localStorage` across up
   to 5 slots (LRU eviction), viewable via `?local=<slot>`. Never sent to a server.
-- Recent links: the last 10 viewed sources are kept in `localStorage` and listed on
-  the home page.
-- Open in Bruno deeplink for any shared source.
-- Request-level deep-linking via `#/req/<id>`.
-- Friendly error states, including a private-collection / CORS path that offers
-  Open in Bruno instead of a dead end.
+- Recent links: the last 10 viewed sources, listed on the home page.
+- Open in Bruno deeplink; request-level deep-linking via `#/req/<id>`.
+- Friendly error states, including a private-collection / CORS path.
+
+## Serverless function
+
+One function backs the Postman import, with the logic shared across hosts:
+
+- `api/lib/import-core.js`: the fetch + map + convert pipeline (host-agnostic).
+- `api/postman-import.js`: Vercel handler (`export default (req, res)`).
+- `netlify/functions/postman-import.mjs`: Netlify function (v2), served at
+  `/api/postman-import` via `config.path` (with a redirect fallback in `netlify.toml`).
+
+Both run on the Node runtime (required by `@usebruno/converters`), not Edge.
 
 ## Runtime dependencies
 
-These are hosts the app talks to, not code dependencies:
-
-- **Docs renderer** from the CDN at `<CDN_BASE>/docs/index.{js,css}`, currently
-  `https://staging.cdn.usebruno.com`. Loaded at runtime, not bundled. Set
-  `CDN_BASE` in `src/main.ts`.
-- **GitHub** (gist API and raw content, `raw.githubusercontent.com`) for collection
-  data. CORS-enabled by GitHub, so reads work in the browser.
+- **Docs renderer** from the CDN at `<CDN_BASE>/docs/index.{js,css}`. Loaded at
+  runtime, not bundled. Set `CDN_BASE` in `src/main.ts`.
+- **GitHub / GitLab-style raw endpoints** for gist and repo collection data
+  (CORS-open, read in the browser).
 - **fetch.usebruno.com** for the Open in Bruno deeplink target.
+- The Postman import function calls Postman's internal `_api/*` endpoints
+  server-side.
 
-No production npm dependencies. Dev tooling only: TypeScript, Vite, Vitest.
+Frontend has no production npm dependencies. The function depends on
+`@usebruno/converters` and `js-yaml`.
 
-## Development
+## Local development
 
 ```bash
 npm install
-npm run dev      # Vite dev server
-npm run build    # tsc + vite build
-npm run preview  # preview the production build
+npm run dev      # Vite dev server, frontend only (no /api function)
 npm test         # vitest
+npm run build    # tsc + vite build
 ```
+
+For the full app including the Postman import function, run it through a host CLI
+that serves the function with the production runtime:
+
+```bash
+netlify dev      # or: vercel dev
+```
+
+Plain `npm run dev` does not serve `/api/postman-import`.
+
+## Deployment (Netlify)
+
+`netlify.toml` builds the Vite frontend to `dist` and serves the function from
+`netlify/functions`. The client calls `/api/postman-import`; the Netlify function's
+`config.path` (and a redirect fallback) map that path to it. Connect the repo in
+Netlify or run `netlify deploy --build --prod`. The function needs the Node runtime
+(default on Netlify Functions).
 
 ## Notes
 
-- `CORS` applies only to Try-It style execution inside the renderer, not to viewing.
-  Reading the collection from GitHub works because GitHub sends permissive CORS
-  headers.
-- `localStorage` keys use the legacy `share-app:` prefix (`share-app:local-slots`,
-  `share-app:recent-links`).
+- CORS applies only to Try-It execution inside the renderer and to the Postman
+  `_api` fetch (handled server-side), not to viewing gist/repo collections.
+- `localStorage` keys use the legacy `share-app:` prefix.

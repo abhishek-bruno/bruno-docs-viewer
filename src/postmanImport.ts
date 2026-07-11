@@ -1,18 +1,51 @@
-import { saveLocalUpload, buildLocalUploadUrl, setUploadFlash } from './localUpload';
-
 const ENDPOINT = '/api/postman-import';
 
-export const isPostmanCollectionUrl = (value: string): boolean => {
+const parsePostmanUrl = (value: string): URL | null => {
   try {
     const u = new URL(String(value).trim());
-    return /(^|\.)postman\.com$/i.test(u.hostname) && /\/collection\//i.test(u.pathname);
+    return /(^|\.)postman\.com$/i.test(u.hostname) ? u : null;
   } catch {
-    return false;
+    return null;
   }
 };
 
-const escapeHtml = (v: string) =>
-  v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+export const isPostmanUrl = (value: string): boolean => parsePostmanUrl(value) !== null;
+
+export const isPostmanCollectionUrl = (value: string): boolean => {
+  const u = parsePostmanUrl(value);
+  return !!u && /\/collection\//i.test(u.pathname);
+};
+
+export const isPostmanEnvironmentUrl = (value: string): boolean => {
+  const u = parsePostmanUrl(value);
+  return !!u && /\/environment\//i.test(u.pathname);
+};
+
+export const buildPostmanShareUrl = (pathname: string, collectionUrl: string, environmentUrls: string[]): string => {
+  const params = new URLSearchParams();
+  params.set('postman_collection', collectionUrl);
+  environmentUrls.forEach((u) => params.append('postman_env', u));
+  return `${pathname}?${params.toString()}`;
+};
+
+export const parsePostmanShareParams = (search: URLSearchParams): { collectionUrl: string; environmentUrls: string[] } | null => {
+  const collectionUrl = search.get('postman_collection');
+  if (!collectionUrl) return null;
+  return { collectionUrl, environmentUrls: search.getAll('postman_env') };
+};
+
+export const runPostmanImport = async (
+  { collectionUrl, environmentUrls }: { collectionUrl: string; environmentUrls: string[] }
+): Promise<{ name: string; opencollection: string }> => {
+  const res = await fetch(ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ collectionUrl, environmentUrls })
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.ok) throw new Error(data.error || `Import failed (${res.status}).`);
+  return { name: data.name, opencollection: data.opencollection };
+};
 
 const envRow = (): string => `
   <div class="pm-env-row">
@@ -26,33 +59,29 @@ export const openPostmanEnvModal = ({ collectionUrl, pathname }: { collectionUrl
   overlay.className = 'pm-overlay';
   overlay.innerHTML = `
     <div class="pm-dialog" role="dialog" aria-modal="true" aria-label="Import from Postman">
-      <h2>Postman collection detected</h2>
-      <p class="pm-lead">It will be converted to OpenCollection and viewed here.</p>
+      <h2>Import Postman Environments</h2>
+      <p class="pm-lead">Add Postman environment links to resolve your collection variables (if any).</p>
 
-      <div class="pm-note">
-        <strong>This one uses Bruno's server.</strong> Postman blocks direct browser access, so the link is sent to Bruno's server to fetch and convert the collection. The link is used only for this conversion and is not stored.
-      </div>
+      <form id="pm-form">
+        <label class="pm-label">Environment links (optional)</label>
+        <div id="pm-envs">${envRow()}</div>
+        <button type="button" class="pm-add-env" id="pm-add-env">+ Add another environment link</button>
 
-      <div class="pm-collection">${escapeHtml(collectionUrl)}</div>
+        <p class="pm-error" id="pm-error" hidden></p>
 
-      <label class="pm-label">Environment links (optional)</label>
-      <div id="pm-envs">${envRow()}</div>
-      <button type="button" class="pm-add-env" id="pm-add-env">+ Add another environment link</button>
-
-      <p class="pm-error" id="pm-error" hidden></p>
-
-      <div class="pm-footer">
-        <button type="button" class="pm-btn pm-btn-secondary" id="pm-cancel">Cancel</button>
-        <button type="button" class="pm-btn pm-btn-primary" id="pm-submit">Import and view</button>
-      </div>
+        <div class="pm-footer">
+          <button type="button" class="pm-btn pm-btn-secondary" id="pm-cancel">Cancel</button>
+          <button type="submit" class="pm-btn pm-btn-primary" id="pm-submit">Import and view</button>
+        </div>
+      </form>
     </div>
   `;
   document.body.appendChild(overlay);
 
   const $ = <T extends HTMLElement>(sel: string) => overlay.querySelector(sel) as T;
+  const form = $<HTMLFormElement>('#pm-form');
   const envsEl = $<HTMLDivElement>('#pm-envs');
   const errorEl = $<HTMLParagraphElement>('#pm-error');
-  const submitBtn = $<HTMLButtonElement>('#pm-submit');
 
   const close = () => overlay.remove();
   const showError = (msg: string) => { errorEl.textContent = msg; errorEl.hidden = false; };
@@ -63,37 +92,27 @@ export const openPostmanEnvModal = ({ collectionUrl, pathname }: { collectionUrl
   });
   $('#pm-cancel').addEventListener('click', close);
 
+  overlay.querySelector<HTMLInputElement>('.pm-env-input')?.focus();
+
   $('#pm-add-env').addEventListener('click', () => envsEl.insertAdjacentHTML('beforeend', envRow()));
   envsEl.addEventListener('click', (e) => {
     const btn = (e.target as HTMLElement).closest('.pm-env-remove');
     if (btn && envsEl.querySelectorAll('.pm-env-row').length > 1) btn.closest('.pm-env-row')?.remove();
   });
 
-  submitBtn.addEventListener('click', async () => {
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+
     const environmentUrls = Array.from(overlay.querySelectorAll<HTMLInputElement>('.pm-env-input'))
       .map((i) => i.value.trim())
       .filter(Boolean);
 
-    errorEl.hidden = true;
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span class="pm-spinner" aria-hidden="true"></span>Importing…';
-
-    try {
-      const res = await fetch(ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ collectionUrl, environmentUrls })
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.ok) throw new Error(data.error || `Import failed (${res.status}).`);
-
-      const { slot, evicted } = saveLocalUpload(data.opencollection, `${data.name || 'postman-import'}.yml`);
-      if (evicted) setUploadFlash('evicted');
-      window.location.assign(buildLocalUploadUrl(slot, { pathname }));
-    } catch (err) {
-      showError(err instanceof Error ? err.message : 'Import failed.');
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Import and view';
+    const badEnv = environmentUrls.find((u) => !isPostmanEnvironmentUrl(u));
+    if (badEnv) {
+      showError('Environment links must be Postman environment URLs (…/environment/…).');
+      return;
     }
+
+    window.location.assign(buildPostmanShareUrl(pathname, collectionUrl, environmentUrls));
   });
 };

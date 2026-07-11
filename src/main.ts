@@ -16,6 +16,10 @@ import {
   readLocalUpload
 } from './localUpload';
 import { recordRecentLink } from './recentLinks';
+import { runPostmanImport, parsePostmanShareParams } from './postmanImport';
+import { postmanCacheKey, getCachedImport, setCachedImport } from './importCache';
+
+const EMPTY_SOURCE: SourcePointers = { gistUrl: '', gitUrl: '', gist: '', path: '' };
 
 const CDN_BASE = 'https://staging.cdn.usebruno.com';
 
@@ -157,13 +161,33 @@ const loadRendererAssets = (): Promise<void> => {
   return rendererAssetsPromise;
 };
 
-const mountDocs = async (text: string, source: SourcePointers) => {
+const mountDocs = async (
+  text: string,
+  source: SourcePointers,
+  { shareUrl }: { shareUrl?: string } = {}
+) => {
   await loadRendererAssets();
-  const showOpenInBruno = hasAnySource(source);
+  const actions = [
+    shareUrl ? '<button type="button" class="btn btn-secondary" id="viewer-copy-link">Copy link</button>' : '',
+    hasAnySource(source) ? openInBrunoButton(source, 'block') : ''
+  ].filter(Boolean);
   app.innerHTML = `
     <div id="opencollection-container"></div>
-    ${showOpenInBruno ? openInBrunoButton(source, 'floating') : ''}
+    ${actions.length ? `<div class="viewer-actions">${actions.join('')}</div>` : ''}
   `;
+
+  if (shareUrl) {
+    const copyBtn = document.getElementById('viewer-copy-link');
+    copyBtn?.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        copyBtn.textContent = 'Copied';
+      } catch {
+        copyBtn.textContent = 'Copy failed';
+      }
+      setTimeout(() => { copyBtn.textContent = 'Copy link'; }, 1500);
+    });
+  }
 
   const Renderer = await waitForRenderer();
   new Renderer({
@@ -206,6 +230,27 @@ const main = async () => {
     return;
   }
 
+  const postman = parsePostmanShareParams(search);
+  if (postman) {
+    renderLoading();
+    const cacheKey = postmanCacheKey(postman.collectionUrl, postman.environmentUrls);
+    try {
+      let yaml = getCachedImport(cacheKey);
+      if (!yaml) {
+        yaml = (await runPostmanImport(postman)).opencollection;
+        setCachedImport(cacheKey, yaml);
+      }
+      await mountDocs(yaml, EMPTY_SOURCE, { shareUrl: window.location.href });
+    } catch (err) {
+      renderMessage(
+        'Couldn\'t import from Postman',
+        err instanceof Error ? err.message : 'The Postman collection could not be imported.',
+        { type: 'go-home' }
+      );
+    }
+    return;
+  }
+
   const source = parseSource(search);
 
   // Missing params — show the landing form so users can paste a YAML source.
@@ -228,7 +273,7 @@ const main = async () => {
   try {
     const { text } = await loadCollectionText(source);
     recordRecentLink(source, parseCollectionTitle(text));
-    await mountDocs(text, source);
+    await mountDocs(text, source, { shareUrl: window.location.href });
   } catch (err) {
     const kind = err instanceof CollectionFetchError ? err.kind : 'unknown';
     const isRepoOnly = decideSource(source) === 'repo' && !source.gistUrl && !source.gist;

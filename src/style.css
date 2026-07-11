@@ -115,6 +115,15 @@ body,
   z-index: 9999;
 }
 
+.viewer-actions {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 9999;
+  display: flex;
+  gap: 0.5rem;
+}
+
 .home {
   display: flex;
   flex-direction: column;
@@ -605,6 +614,7 @@ body,
   font-size: 0.8125rem;
   font-weight: 600;
   margin-bottom: 0.35rem;
+  margin-top: 1.5rem;
 }
 
 .pm-input {

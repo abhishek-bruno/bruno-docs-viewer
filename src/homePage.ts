@@ -18,7 +18,7 @@ import {
   listRecentLinks,
   removeRecentLink
 } from './recentLinks';
-import { isPostmanCollectionUrl, openPostmanEnvModal } from './postmanImport';
+import { isPostmanCollectionUrl, isPostmanUrl, openPostmanEnvModal } from './postmanImport';
 
 const LOGO_URL =
   'https://raw.githubusercontent.com/usebruno/mintlify-docs/main/logo/light.png';
@@ -121,9 +121,9 @@ export const renderHomePage = (
       <div class="home-shell">
         <header class="home-hero">
           <img class="state-logo" src="${LOGO_URL}" alt="Bruno" />
-          <h1>View a shared Bruno collection</h1>
+          <h1>View Bruno API Docs</h1>
           <p class="home-lead">
-            Paste a link or upload an OpenCollection YAML file to browse interactive API docs.
+            Supports OpenCollection single YAML file URL or Postman public collection URL.
           </p>
           ${flash === 'evicted' ? '<p class="home-flash">Oldest local preview was replaced to make room for the new upload.</p>' : ''}
         </header>
@@ -248,6 +248,12 @@ export const renderHomePage = (
     if (isPostmanCollectionUrl(yamlInput)) {
       errorEl.hidden = true;
       openPostmanEnvModal({ collectionUrl: yamlInput, pathname });
+      return;
+    }
+
+    if (isPostmanUrl(yamlInput)) {
+      errorEl.textContent = 'That is a Postman link but not a collection. Paste a Postman collection URL.';
+      errorEl.hidden = false;
       return;
     }
 

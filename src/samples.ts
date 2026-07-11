@@ -19,12 +19,12 @@ const PM_ENVIRONMENT =
 export const SAMPLES: Sample[] = [
   {
     label: 'Hotel Booking API',
-    sublabel: 'A gist-hosted sample collection',
+    sublabel: 'https://gist.github.com/abhishek-bruno/6037ec28edf197eeb11b09606fda7371',
     href: (pathname) => `${pathname}?gist=${GIST_ID}`
   },
   {
     label: 'Microsoft Graph',
-    sublabel: 'Public Postman collection + environment',
+    sublabel: 'https://www.postman.com/microsoftgraph/microsoft-graph/collection/zzaccpr/microsoft-graph',
     href: (pathname) => buildPostmanShareUrl(pathname, PM_COLLECTION, [PM_ENVIRONMENT])
   }
 ];

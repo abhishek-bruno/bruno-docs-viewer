@@ -106,8 +106,8 @@ export function HomePage() {
         <div className="home-shell">
           <header className="home-hero">
             <img className="state-logo" src={LOGO_URL} alt="Bruno" />
-            <h1>View Bruno API Docs</h1>
-            <p className="home-lead">Paste a link or upload an OpenCollection YAML file to browse interactive API docs.</p>
+            <h1>Bruno Docs Viewer</h1>
+            <p className="home-lead">Supports OpenCollection YAML file and public Postman collection links</p>
           </header>
 
           <section className="home-panel">
@@ -121,7 +121,7 @@ export function HomePage() {
                   autoCorrect="off"
                   autoCapitalize="off"
                   spellCheck={false}
-                  placeholder="Paste an OpenCollection YAML URL or public Postman collection URL"
+                  placeholder="Paste OpenCollection YAML file URL or public Postman collection URL"
                 />
                 <button type="submit" className="btn btn-primary home-submit">
                   View docs

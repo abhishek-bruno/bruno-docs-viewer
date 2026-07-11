@@ -142,7 +142,7 @@ body,
 
 .home-columns {
   width: 100%;
-  max-width: 35rem;
+  max-width: 44rem;
   display: flex;
   justify-content: center;
 }
@@ -230,7 +230,7 @@ body,
 
 .home-lead {
   color: #6b7280;
-  max-width: 26rem;
+  max-width: 30rem;
   margin: 0;
   line-height: 1.5;
   font-size: 0.875rem;

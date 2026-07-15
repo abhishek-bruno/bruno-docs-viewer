@@ -711,7 +711,12 @@ body,
   align-items: center;
   justify-content: center;
   padding: 1rem;
-  z-index: 1000;
+  /* Above .viewer-actions (9999) so the floating buttons don't sit over the modal. */
+  z-index: 10000;
+  /* Pin to the system stack (mirrors :root's fallback) so the modal renders
+     identically whether or not the docs renderer has injected the Inter
+     webfont into the page. Children inherit this (inputs/buttons use `inherit`). */
+  font-family: system-ui, -apple-system, sans-serif;
 }
 
 .pm-dialog {
@@ -729,6 +734,7 @@ body,
 .pm-dialog h2 {
   margin: 0 0 0.25rem;
   font-size: 1.15rem;
+  font-weight: 700;
 }
 
 .pm-lead {

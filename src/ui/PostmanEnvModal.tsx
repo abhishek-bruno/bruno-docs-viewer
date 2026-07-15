@@ -8,13 +8,16 @@ import { buildPostmanShareUrl, isPostmanEnvironmentUrl } from '../postman/postma
 export function PostmanEnvModal({
   collectionUrl,
   pathname,
+  initialEnvs,
   onClose
 }: {
   collectionUrl: string;
   pathname: string;
+  /** Prefill (e.g. re-editing environments already carried in `pe` params). */
+  initialEnvs?: string[];
   onClose: () => void;
 }) {
-  const [envs, setEnvs] = useState<string[]>(['']);
+  const [envs, setEnvs] = useState<string[]>(initialEnvs?.length ? initialEnvs : ['']);
   const [error, setError] = useState<string | null>(null);
   const firstInput = useRef<HTMLInputElement>(null);
 
@@ -41,7 +44,8 @@ export function PostmanEnvModal({
       setError('Environment links must be Postman environment URLs (…/environment/…).');
       return;
     }
-    window.location.assign(buildPostmanShareUrl(pathname, collectionUrl, environmentUrls));
+    // Keep the current request selection (#/req/<id>) across the reload.
+    window.location.assign(buildPostmanShareUrl(pathname, collectionUrl, environmentUrls) + window.location.hash);
   };
 
   return (

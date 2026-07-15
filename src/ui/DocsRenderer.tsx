@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { getRequestIdFromHash, hasAnySource, buildFetchDeeplinkUrl, type SourcePointers } from '../sources/sourceParams';
 import { loadRendererAssets, waitForRenderer } from './rendererAssets';
 
@@ -7,8 +7,11 @@ type Phase = 'loading' | 'ready' | 'error';
 /**
  * Mounts the CDN docs renderer into a container node. The renderer bundle is
  * downloaded lazily, so a spinner overlay stays up until it has mounted.
+ *
+ * `extraActions` renders alongside the floating "Back to home" button (e.g. the
+ * Postman view's "Import Postman environment").
  */
-export function DocsRenderer({ text, source }: { text: string; source: SourcePointers }) {
+export function DocsRenderer({ text, source, extraActions }: { text: string; source: SourcePointers; extraActions?: ReactNode }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const started = useRef(false);
   const [phase, setPhase] = useState<Phase>('loading');
@@ -63,6 +66,7 @@ export function DocsRenderer({ text, source }: { text: string; source: SourcePoi
           CDN oc-docs bundle supports `backToHomeHref`. Kept until that ships so
           there's always a way back. */}
       <div className="viewer-actions">
+        {extraActions}
         <a className="btn btn-secondary" href={window.location.pathname || '/'}>
           Back to home
         </a>

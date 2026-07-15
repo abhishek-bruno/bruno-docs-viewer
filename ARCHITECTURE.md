@@ -8,19 +8,23 @@ adapters.
 
 ```
 src/
-  config.ts              CDN_BASE + LOGO_URL constants
+  config.ts              renderer JS/CSS URLs (CDN default, VITE_RENDERER_* override) + LOGO_URL
   main.tsx               React entry: mounts <App> + hashchange reload
-  App.tsx                router: reads the URL and picks a view component
+  App.tsx                router: prefix path OR query params -> a view component
   samples.ts             sample collections for the empty home page
   style.css              all styles (single sheet)
 
-  sources/               "where does the collection come from" (gist/repo)
-    sourceParams.ts      param vocabulary: parse, build, candidate URLs, deeplink
-    loader.ts            fetch a source's YAML (gist-first), typed CollectionFetchError
+  sources/               "where does the collection come from"
+    sourceParams.ts      param vocabulary (git_url/raw_url/openapi_url/gist/path): parse, build, deeplink
+    classifySource.ts    a full URL -> routing intent; parsePrefixPath() for the prefix route
+    loader.ts            fetch a source's text (doc-first), typed CollectionFetchError
 
   collection/            "what format is this, and make it OpenCollection"
-    format.ts            sniffFormat(text): opencollection | openapi
+    format.ts            sniffFormat() + isUnbundledOpenCollection() (bundled:false -> git-import)
     resolve.ts           resolveToOpenCollection(text): sniff + convert (lazy converters import)
+
+  git/                   git-repo import (framework-agnostic)
+    gitImport.ts         runGitImport(): POST /api/git-import -> collection | list
 
   postman/               Postman import feature (framework-agnostic)
     postmanImport.ts     URL detection, share params, runPostmanImport()
@@ -29,19 +33,20 @@ src/
     collectionStore.ts   the single IndexedDB store + CRUD + 50-entry LRU cap
     localUpload.ts       file uploads (?local=<key>)
     recentLinks.ts       gist/repo history entries
-    importCache.ts       converted-Postman cache
+    importCache.ts       converted Postman + git import cache
 
   ui/                    React components
     HomePage.tsx         input, upload, recents/history, samples
     LocalUploadView.tsx  ?local= view (loads from IndexedDB)
     PostmanView.tsx      ?pm= view (cache-first import)
-    SourceView.tsx       gist/repo view (fetch + record history)
-    DocsRenderer.tsx     mounts the CDN renderer + a back-to-home button
+    SourceView.tsx       gist/repo/raw view: fetch, resolve, or git-import fallback
+    CollectionPicker.tsx monorepo chooser (git repo with several collections)
+    DocsRenderer.tsx     mounts the renderer (openInBrunoHref/backToHomeHref) + floating back-to-home
     States.tsx           <Loading> and <Message> states
     RecentList.tsx       shared clickable list of stored collections
     HistoryPanel.tsx     full history as a second column: remove one / clear all
     PostmanEnvModal.tsx  optional environment links before import
-    rendererAssets.ts    lazy CDN asset loader + waitForRenderer
+    rendererAssets.ts    lazy renderer asset loader + waitForRenderer
 
   test/setup.ts          fake-indexeddb for the test env
 
@@ -67,7 +72,7 @@ renders the monorepo chooser.
 Dependency direction: `ui` and `App` depend on `sources`, `postman`, `storage`,
 `config`, `samples`. `storage` modules depend only on `collectionStore` (and
 `sources` for key building). `sources`, `postman`, and `config` depend on nothing
-internal. No cycles. The `sources`, `storage`, `postman`, and `collection`
+internal. No cycles. The `sources`, `git`, `storage`, `postman`, and `collection`
 layers are plain TypeScript (no React), so they are unit-tested without a DOM.
 
 Every client-fetched document flows through `collection/resolve.ts` before it
@@ -80,16 +85,23 @@ Postman's host blocks CORS; the format is known there, so it needs no sniffer.
 
 ## Routing (`App.tsx`)
 
-`<App>` inspects `window.location.search` once and renders exactly one view:
+`<App>` inspects the URL once and renders exactly one view:
 
+0. **Prefix route** — `pathname !== '/'` (e.g. `/github.com/org/repo`): the path
+   *is* the source URL. `parsePrefixPath` reconstructs it (`https://` + path +
+   its own query) and `classifySourceUrl` maps it to `<PostmanView>` or
+   `<SourceView>`, keeping the pretty URL (no redirect). A Netlify SPA rewrite
+   (`/* -> /index.html`) serves the app for these paths.
 1. `?local=<key>` -> `<LocalUploadView>` (IndexedDB read)
 2. `?pm=…` -> `<PostmanView>` (cache-first import)
-3. a gist/repo source -> `<SourceView>` (fetch + record history)
+3. a git/raw/gist source -> `<SourceView>` (fetch, resolve, or git-import)
 4. nothing -> `<HomePage>`
 
-Each view manages its own async load in an effect and renders `<Loading>`,
-`<Message>`, or `<DocsRenderer>`. Navigation is full-page (`window.location.assign`),
-so a view mounts once per page load and the app needs no client-side router.
+`pathname === '/'` uses steps 1-4 (the query form + home); any other path is the
+prefix route (step 0). Each view manages its own async load in an effect and
+renders `<Loading>`, `<Message>`, `<CollectionPicker>`, or `<DocsRenderer>`.
+Navigation is full-page (`window.location.assign`), so a view mounts once per
+page load and the app needs no client-side router.
 
 `<DocsRenderer>` mounts the imperative CDN renderer into a ref'd node exactly once
 (guarded, and StrictMode is intentionally omitted so dev doesn't double-mount it).

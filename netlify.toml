@@ -14,3 +14,11 @@
   to = "/.netlify/functions/git-import"
   status = 200
   force = true
+
+# SPA fallback: any non-file path (e.g. /<source-url>) serves the app, which
+# routes on the pathname. Placed last + no force, so functions and real assets
+# still resolve first.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

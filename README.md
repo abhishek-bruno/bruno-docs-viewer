@@ -39,24 +39,44 @@ when a collection renders, and the raw YAML is handed to it as a string.
 ## URL and params
 
 Source vocabulary (shared with `fetch.usebruno.com` and the Bruno desktop deeplink
-parser), all URL-encoded:
+parser), all URL-encoded. One canonical long form per source:
 
 | Param | Meaning | Example |
 |---|---|---|
-| `g` | short gist ref `owner/gistId/fileName`, expands to a raw gist URL | `?g=jane/abc123/api.yml` |
-| `gist_url` | full raw gist URL (snapshot) | |
-| `gist` | bare gist id, uses the gist API (parse only, not generated) | |
-| `r` | short repo ref `org/repo`, expands to a GitHub repo URL | `?r=usebruno/collection` |
-| `git_url` | full GitHub repo URL (syncable) | |
-| `path` | optional subdirectory within a repo (monorepo) | `?r=org/repo&path=apis/users` |
+| `git_url` | a git repo (GitHub/GitLab/Bitbucket/self-hosted), incl. `/tree/<branch>/<subdir>` | `?git_url=https://github.com/org/repo/tree/main/collection` |
+| `raw_url` | a raw OpenCollection document URL (snapshot) | `?raw_url=https://raw.githubusercontent.com/org/repo/main/opencollection.yml` |
+| `openapi_url` | a raw OpenAPI / Swagger spec URL (converted to OpenCollection) | `?openapi_url=https://petstore3.swagger.io/api/v3/openapi.json` |
+| `gist` | bare gist id (resolved via the gist API) | `?gist=6037ec28edf197eeb11b09606fda7371` |
+| `path` | optional subdirectory within a repo (monorepo) | `?git_url=…&path=apis/users` |
 | `local` | browser-local upload key (`upload:<uuid>`) | `?local=upload%3A…` |
 | `pm` | short Postman collection ref (the postman.com path), expands to the full URL | `?pm=/acme/ws/collection/ab12cd/orders` |
 | `pe` | short Postman environment ref, repeatable | `?pe=/acme/ws/environment/123-abcd` |
 
-Long forms (`git_url`, `gist_url`) win over short (`r`, `g`). A repo is a syncable
-source, a gist is a snapshot. Repo sources resolve to a raw `opencollection.yml`
-on `raw.githubusercontent.com`, honoring `/tree/<branch>/<subdir>` and `path`.
-Request deep-linking: `#/req/<id>` selects a specific request.
+A `git_url` repo is opened by cloning it (server-side, via the git-import
+function) and converting the native `.bru`/`.yml` collection — unless it has a
+single bundled `opencollection.yml`, which is fetched directly as a fast path.
+A monorepo with several collections shows a picker; `path` (or a `/tree/…`
+subdir) targets one. `raw_url`/`openapi_url` are fetched and rendered/converted
+in the browser. Request deep-linking: `#/req/<id>` selects a specific request.
+
+## Prepend the domain
+
+Any source can also be opened by putting the viewer host **in front of** its
+URL (the vscode.dev trick), so nothing about the source URL has to change:
+
+```
+share.usebruno.com/www.postman.com/<workspace>/collection/<id>/<name>
+share.usebruno.com/github.com/org/repo/tree/main/collection
+share.usebruno.com/gist.github.com/<user>/<gistId>
+share.usebruno.com/petstore3.swagger.io/api/v3/openapi.json
+```
+
+Everything from the first `/` to `#` is the source URL (scheme assumed `https`);
+`#/req/<id>` still deep-links a request. It's classified into the same source
+model as the paste box — Postman collections, git repos (GitHub / GitLab /
+Bitbucket, incl. `/tree/<branch>/<subdir>`), gists, and raw OpenCollection /
+OpenAPI URLs. Postman via the prefix carries the collection only; environments
+use the `?pm=&pe=` form. A Netlify SPA rewrite serves the app for these paths.
 
 ## Import from Postman
 

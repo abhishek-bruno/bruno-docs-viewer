@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { normalizeYamlDocumentUrl, isGitRepoUrl, buildShareViewerUrl } from '../sources/sourceParams';
+import { buildShareViewerUrl } from '../sources/sourceParams';
+import { classifySourceUrl } from '../sources/classifySource';
 import { buildLocalUploadUrl, saveLocalUpload } from '../storage/localUpload';
 import { listCollections, deleteCollection, clearCollections, type StoredCollection } from '../storage/collectionStore';
 import { isPostmanCollectionUrl, isPostmanUrl } from '../postman/postmanImport';
@@ -28,27 +29,22 @@ export function HomePage() {
     e.preventDefault();
     const value = String(new FormData(e.currentTarget).get('yamlUrl') || '').trim();
 
-    if (isPostmanCollectionUrl(value)) {
-      setError(null);
-      setPostmanUrl(value);
-      return;
-    }
-    if (isPostmanUrl(value)) {
+    // Reject a Postman link that isn't a collection, before generic classification.
+    if (!isPostmanCollectionUrl(value) && isPostmanUrl(value)) {
       setError('That is a Postman link but not a collection. Paste a Postman collection URL (…/collection/…).');
       return;
     }
-    if (isGitRepoUrl(value)) {
-      setError(null);
-      window.location.assign(buildShareViewerUrl({ gitUrl: value, rawUrl: '', openapiUrl: '', gist: '', path: '' }));
-      return;
-    }
-    const rawUrl = normalizeYamlDocumentUrl(value);
-    if (!rawUrl) {
-      setError('Enter a valid HTTPS URL to your OpenCollection or OpenAPI file.');
+    const intent = classifySourceUrl(value);
+    if (!intent) {
+      setError('Enter a valid collection URL — OpenCollection, OpenAPI, a git repo, a gist, or Postman.');
       return;
     }
     setError(null);
-    window.location.assign(buildShareViewerUrl({ rawUrl, gitUrl: '', openapiUrl: '', gist: '', path: '' }));
+    if (intent.kind === 'postman') {
+      setPostmanUrl(value);
+      return;
+    }
+    window.location.assign(buildShareViewerUrl(intent.source));
   };
 
   const onFile = (file: File | undefined, input: HTMLInputElement) => {

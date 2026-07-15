@@ -3,3 +3,7 @@ dist
 
 # Local Netlify folder
 .netlify
+
+# Local env overrides (e.g. VITE_RENDERER_*), see .env.example
+.env.local
+.env.*.local

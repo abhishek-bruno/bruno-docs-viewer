@@ -132,7 +132,9 @@ Both run on the Node runtime (required by `@usebruno/converters`), not Edge.
 ## Runtime dependencies
 
 - **Docs renderer** from the CDN at `<CDN_BASE>/docs/index.{js,css}`. Loaded at
-  runtime, not bundled. Set `CDN_BASE` in `src/config.ts`.
+  runtime, not bundled. The URLs default to the CDN (`src/config.ts`) and can be
+  overridden per-environment with `VITE_RENDERER_JS_URL` / `VITE_RENDERER_CSS_URL`
+  (see **Local renderer** below).
 - **GitHub / GitLab-style raw endpoints** for gist and repo collection data
   (CORS-open, read in the browser).
 - **fetch.usebruno.com** for the Open in Bruno deeplink target.
@@ -157,6 +159,29 @@ that serves the function with the production runtime:
 ```bash
 netlify dev      # or: vercel dev
 ```
+
+### Local renderer
+
+By default the docs renderer loads from the CDN. To iterate against a locally
+built `oc-docs` renderer instead (in the `opencollection` repo):
+
+```bash
+# 1. Build the standalone renderer bundle (window.OpenCollection global)
+cd path/to/opencollection/packages/oc-docs
+npm run build:standalone                 # -> dist-standalone/api-docs.{js,css}
+
+# 2. Serve that folder on a fixed port
+npx serve dist-standalone -l 5555
+
+# 3. In bruno-docs-viewer, copy .env.example to .env.local and set:
+#    VITE_RENDERER_JS_URL=http://localhost:5555/api-docs.js
+#    VITE_RENDERER_CSS_URL=http://localhost:5555/api-docs.css
+npm run dev                              # restart so Vite picks up .env.local
+```
+
+`.env.local` is gitignored, so the CDN default stays untouched for everyone else.
+For a rebuild-on-change loop, run the standalone build in watch mode
+(`vite build --config vite.config.standalone.ts --watch`) alongside the static server.
 
 Plain `npm run dev` does not serve `/api/postman-import`.
 

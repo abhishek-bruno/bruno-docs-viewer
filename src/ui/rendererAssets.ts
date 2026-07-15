@@ -1,4 +1,4 @@
-import { CDN_BASE } from '../config';
+import { RENDERER_JS_URL, RENDERER_CSS_URL } from '../config';
 
 /** Poll until the renderer's global constructor is available (or time out). */
 export const waitForRenderer = (timeoutMs = 10000): Promise<any> =>
@@ -20,10 +20,10 @@ export const loadRendererAssets = (): Promise<void> => {
     rendererAssetsPromise = new Promise((resolve, reject) => {
       const link = document.createElement('link');
       link.rel = 'stylesheet';
-      link.href = `${CDN_BASE}/docs/index.css`;
+      link.href = RENDERER_CSS_URL;
       link.onload = () => {
         const script = document.createElement('script');
-        script.src = `${CDN_BASE}/docs/index.js`;
+        script.src = RENDERER_JS_URL;
         script.onload = () => resolve();
         script.onerror = () => reject(new Error('Renderer failed to load'));
         document.head.appendChild(script);

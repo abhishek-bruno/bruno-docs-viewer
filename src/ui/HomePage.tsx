@@ -48,8 +48,8 @@ export function HomePage() {
 
   const onFile = (file: File | undefined, input: HTMLInputElement) => {
     if (!file) return;
-    if (!/\.ya?ml$/i.test(file.name)) {
-      setError('Choose a .yml or .yaml file.');
+    if (!/\.(ya?ml|json)$/i.test(file.name)) {
+      setError('Choose a .yml, .yaml, or .json file.');
       input.value = '';
       return;
     }
@@ -107,7 +107,7 @@ export function HomePage() {
           <header className="home-hero">
             <img className="state-logo" src={LOGO_URL} alt="Bruno" />
             <h1>Bruno Docs Viewer</h1>
-            <p className="home-lead">Supports OpenCollection YAML file and public Postman collection links</p>
+            <p className="home-lead">Supports OpenCollection and OpenAPI files, and public Postman collection links</p>
           </header>
 
           <section className="home-panel">
@@ -121,7 +121,7 @@ export function HomePage() {
                   autoCorrect="off"
                   autoCapitalize="off"
                   spellCheck={false}
-                  placeholder="Paste OpenCollection YAML file URL or public Postman collection URL"
+                  placeholder="Paste an OpenCollection, OpenAPI, or public Postman collection URL"
                 />
                 <button type="submit" className="btn btn-primary home-submit">
                   View docs
@@ -136,7 +136,7 @@ export function HomePage() {
                 <input
                   type="file"
                   className="home-file-input"
-                  accept=".yml,.yaml,application/x-yaml,text/yaml,text/x-yaml"
+                  accept=".yml,.yaml,.json,application/x-yaml,text/yaml,text/x-yaml,application/json"
                   onChange={(e) => onFile(e.target.files?.[0], e.target)}
                 />
                 <svg
@@ -157,8 +157,8 @@ export function HomePage() {
                   <path d="m9.5 13.5 2.5-2.5 2.5 2.5" />
                 </svg>
                 <span className="home-dropzone-text">
-                  <span className="home-dropzone-title">Choose YAML file</span>
-                  <span className="home-dropzone-hint">opencollection.yml, up to 10 MB</span>
+                  <span className="home-dropzone-title">Choose a file</span>
+                  <span className="home-dropzone-hint">OpenCollection or OpenAPI, YAML or JSON, up to 10 MB</span>
                 </span>
               </label>
 

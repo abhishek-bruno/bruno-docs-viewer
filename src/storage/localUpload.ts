@@ -14,7 +14,7 @@ export const parseCollectionTitle = (yaml: string, fileName = ''): string => {
   const matched = infoName || rootName;
   const title = (matched?.[1] || matched?.[2] || '').trim();
   if (title) return title;
-  const fromFile = fileName.replace(/\.ya?ml$/i, '').trim();
+  const fromFile = fileName.replace(/\.(ya?ml|json)$/i, '').trim();
   return fromFile || 'Untitled collection';
 };
 

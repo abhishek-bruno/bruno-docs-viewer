@@ -16,11 +16,20 @@ const PM_COLLECTION = 'https://www.postman.com/microsoftgraph/microsoft-graph/co
 const PM_ENVIRONMENT =
   'https://www.postman.com/microsoftgraph/microsoft-graph/environment/455214-efbc69b2-69bd-402e-9e72-850b3a49bb21';
 
+// A public OpenAPI 3.0 spec (converted to OpenCollection in the browser). Loaded
+// via the raw-URL slot (`gist_url`); the resolve stage sniffs and converts it.
+const OPENAPI_SPEC = 'https://petstore3.swagger.io/api/v3/openapi.json';
+
 export const SAMPLES: Sample[] = [
   {
     label: 'Hotel Booking API',
     sublabel: 'https://gist.github.com/abhishek-bruno/6037ec28edf197eeb11b09606fda7371',
     href: (pathname) => `${pathname}?gist=${GIST_ID}`
+  },
+  {
+    label: 'Swagger Petstore (OpenAPI)',
+    sublabel: OPENAPI_SPEC,
+    href: (pathname) => `${pathname}?gist_url=${encodeURIComponent(OPENAPI_SPEC)}`
   },
   {
     label: 'Microsoft Graph',

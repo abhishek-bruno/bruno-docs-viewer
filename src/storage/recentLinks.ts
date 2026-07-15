@@ -2,12 +2,13 @@ import { appendSourceParams, hasAnySource, type SourcePointers } from '../source
 import { putCollection } from './collectionStore';
 
 export const sourceHistoryKey = (source: SourcePointers): string =>
-  appendSourceParams(new URLSearchParams(), source, { preferShort: true }).toString();
+  appendSourceParams(new URLSearchParams(), source).toString();
 
 /** The actual source URL, shown under the title in history. */
 export const describeSourceSubtitle = (source: SourcePointers): string => {
   if (source.gitUrl) return source.gitUrl;
-  if (source.gistUrl) return source.gistUrl;
+  if (source.openapiUrl) return source.openapiUrl;
+  if (source.rawUrl) return source.rawUrl;
   if (source.gist) return `https://gist.github.com/${source.gist}`;
   return 'Remote collection';
 };

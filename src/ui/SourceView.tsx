@@ -32,7 +32,7 @@ export function SourceView({ source }: { source: SourcePointers }) {
       active = false;
     };
     // A source object is stable for the page's life; key on its pointers.
-  }, [source.gitUrl, source.gistUrl, source.gist, source.path]);
+  }, [source.gitUrl, source.rawUrl, source.openapiUrl, source.gist, source.path]);
 
   if (state.status === 'loading') return <Loading message="Loading collection…" hint="Fetching the collection source." />;
 
@@ -40,7 +40,7 @@ export function SourceView({ source }: { source: SourcePointers }) {
     return <DocsRenderer text={state.text} source={source} />;
   }
 
-  const isRepoOnly = decideSource(source) === 'repo' && !source.gistUrl && !source.gist;
+  const isRepoOnly = decideSource(source) === 'repo' && !source.rawUrl && !source.openapiUrl && !source.gist;
   if (state.kind === 'not-found') {
     return <Message title="Collection not found" body="This shared collection no longer exists." action={{ type: 'go-home' }} />;
   }

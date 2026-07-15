@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  parseGistRawUrl,
+  parseSource,
   normalizeYamlDocumentUrl,
   normalizeGitRepoUrl,
   buildShareViewerUrl
@@ -8,20 +8,6 @@ import {
 
 const rawGistUrl = 'https://gist.githubusercontent.com/octocat/abc123/raw/MyCollection.yml';
 const gitUrl = 'https://github.com/org/repo.git';
-
-describe('parseGistRawUrl', () => {
-  it('parses gist raw URLs', () => {
-    expect(parseGistRawUrl(rawGistUrl)).toEqual({
-      owner: 'octocat',
-      gistId: 'abc123',
-      fileName: 'MyCollection.yml'
-    });
-  });
-
-  it('returns null for non-gist URLs', () => {
-    expect(parseGistRawUrl('https://example.com/file.yml')).toBeNull();
-  });
-});
 
 describe('normalizeYamlDocumentUrl', () => {
   it('accepts gist raw URLs', () => {
@@ -53,47 +39,59 @@ describe('normalizeGitRepoUrl', () => {
   });
 });
 
+describe('parseSource', () => {
+  it('reads raw_url, openapi_url, git_url, gist, path', () => {
+    const s = parseSource(
+      new URLSearchParams('raw_url=https://x/y.yml&openapi_url=https://x/o.json&git_url=https://github.com/o/r.git&gist=abc&path=apis')
+    );
+    expect(s.rawUrl).toBe('https://x/y.yml');
+    expect(s.openapiUrl).toBe('https://x/o.json');
+    expect(s.gitUrl).toBe('https://github.com/o/r.git');
+    expect(s.gist).toBe('abc');
+    expect(s.path).toBe('apis');
+  });
+
+});
+
 describe('buildShareViewerUrl', () => {
-  it('uses short g= for gist raw URLs', () => {
+  it('emits raw_url for a raw document URL', () => {
     const url = buildShareViewerUrl(
-      { gistUrl: rawGistUrl, gitUrl: '', gist: '', path: '' },
-      { baseUrl: 'https://share.usebruno.com', preferShort: true }
+      { rawUrl: rawGistUrl, gitUrl: '', openapiUrl: '', gist: '', path: '' },
+      { baseUrl: 'https://share.usebruno.com' }
     );
-    expect(url).toContain('g=octocat');
-    expect(url).not.toContain('gist_url=');
+    expect(url).toContain('raw_url=');
   });
 
-  it('uses gist_url for non-gist raw URLs', () => {
-    const raw = 'https://raw.githubusercontent.com/org/repo/main/opencollection.yml';
+  it('emits openapi_url for an OpenAPI spec', () => {
+    const spec = 'https://petstore3.swagger.io/api/v3/openapi.json';
     const url = buildShareViewerUrl(
-      { gistUrl: raw, gitUrl: '', gist: '', path: '' },
-      { baseUrl: 'https://share.usebruno.com', preferShort: true }
+      { rawUrl: '', gitUrl: '', openapiUrl: spec, gist: '', path: '' },
+      { baseUrl: 'https://share.usebruno.com' }
     );
-    expect(url).toContain('gist_url=');
-    expect(url).not.toContain('g=octocat');
+    expect(url).toContain('openapi_url=');
+    expect(url).not.toContain('raw_url=');
   });
 
-  it('emits r before g when both are present', () => {
+  it('emits git_url for a repo source', () => {
     const url = buildShareViewerUrl(
-      { gistUrl: rawGistUrl, gitUrl, gist: '', path: '' },
-      { baseUrl: 'https://share.usebruno.com', preferShort: true }
+      { rawUrl: '', gitUrl, openapiUrl: '', gist: '', path: '' },
+      { baseUrl: 'https://share.usebruno.com' }
     );
-    expect(url.indexOf('r=')).toBeLessThan(url.indexOf('g='));
-    expect(url).toContain('.yml');
+    expect(url).toContain('git_url=');
   });
 
-  it('carries a bare gist id through short-form URLs', () => {
+  it('carries a bare gist id', () => {
     const url = buildShareViewerUrl(
-      { gistUrl: '', gitUrl: '', gist: 'abc123', path: '' },
-      { baseUrl: 'https://share.usebruno.com', preferShort: true }
+      { rawUrl: '', gitUrl: '', openapiUrl: '', gist: 'abc123', path: '' },
+      { baseUrl: 'https://share.usebruno.com' }
     );
     expect(url).toContain('gist=abc123');
   });
 
   it('appends a readable per-segment deep-link hash', () => {
     const url = buildShareViewerUrl(
-      { gistUrl: rawGistUrl, gitUrl, gist: '', path: '' },
-      { baseUrl: 'https://share.usebruno.com', requestId: 'auth/login', preferShort: true }
+      { rawUrl: rawGistUrl, gitUrl, openapiUrl: '', gist: '', path: '' },
+      { baseUrl: 'https://share.usebruno.com', requestId: 'auth/login' }
     );
     expect(url).toContain('#/req/auth/login');
     const hash = url.slice(url.indexOf('#'));

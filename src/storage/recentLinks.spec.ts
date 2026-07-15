@@ -3,19 +3,23 @@ import { clearCollections, getCollection } from './collectionStore';
 import { buildRecentLinkHref, describeSourceSubtitle, recordRecentLink, sourceHistoryKey } from './recentLinks';
 import type { SourcePointers } from '../sources/sourceParams';
 
-const EMPTY: SourcePointers = { gistUrl: '', gitUrl: '', gist: '', path: '' };
+const EMPTY: SourcePointers = { rawUrl: '', gitUrl: '', openapiUrl: '', gist: '', path: '' };
 const gistSource: SourcePointers = {
   ...EMPTY,
-  gistUrl: 'https://gist.githubusercontent.com/user/abc/raw/petstore.yml'
+  rawUrl: 'https://gist.githubusercontent.com/user/abc/raw/petstore.yml'
 };
 
 describe('describeSourceSubtitle', () => {
-  it('shows the gist URL', () => {
-    expect(describeSourceSubtitle(gistSource)).toBe(gistSource.gistUrl);
+  it('shows the document URL', () => {
+    expect(describeSourceSubtitle(gistSource)).toBe(gistSource.rawUrl);
   });
 
   it('shows a plain remote YAML url as-is', () => {
-    expect(describeSourceSubtitle({ ...EMPTY, gistUrl: 'https://example.com/a/b.yml' })).toBe('https://example.com/a/b.yml');
+    expect(describeSourceSubtitle({ ...EMPTY, rawUrl: 'https://example.com/a/b.yml' })).toBe('https://example.com/a/b.yml');
+  });
+
+  it('shows the OpenAPI spec URL', () => {
+    expect(describeSourceSubtitle({ ...EMPTY, openapiUrl: 'https://x/openapi.json' })).toBe('https://x/openapi.json');
   });
 
   it('shows the repo URL', () => {
@@ -43,7 +47,7 @@ describe('recordRecentLink', () => {
   it('persists a link entry keyed by its source', async () => {
     await recordRecentLink(gistSource, 'Petstore');
     const stored = await getCollection(`link:${sourceHistoryKey(gistSource)}`);
-    expect(stored).toMatchObject({ kind: 'link', title: 'Petstore', subtitle: gistSource.gistUrl });
+    expect(stored).toMatchObject({ kind: 'link', title: 'Petstore', subtitle: gistSource.rawUrl });
   });
 
   it('ignores an empty source', async () => {

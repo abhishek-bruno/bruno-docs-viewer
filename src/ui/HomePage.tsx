@@ -37,13 +37,13 @@ export function HomePage() {
       setError('That is a Postman link but not a collection. Paste a Postman collection URL (…/collection/…).');
       return;
     }
-    const gistUrl = normalizeYamlDocumentUrl(value);
-    if (!gistUrl) {
-      setError('Enter a valid HTTPS URL to your OpenCollection YAML file.');
+    const rawUrl = normalizeYamlDocumentUrl(value);
+    if (!rawUrl) {
+      setError('Enter a valid HTTPS URL to your OpenCollection or OpenAPI file.');
       return;
     }
     setError(null);
-    window.location.assign(buildShareViewerUrl({ gistUrl, gitUrl: '', gist: '', path: '' }, { preferShort: true }));
+    window.location.assign(buildShareViewerUrl({ rawUrl, gitUrl: '', openapiUrl: '', gist: '', path: '' }));
   };
 
   const onFile = (file: File | undefined, input: HTMLInputElement) => {

@@ -1,4 +1,6 @@
-const ENDPOINT = '/api/git-import';
+import { apiUrl } from '../config';
+
+const ENDPOINT = apiUrl('/api/git-import');
 
 export interface GitCollectionRef {
   name: string;

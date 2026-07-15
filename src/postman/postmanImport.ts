@@ -1,4 +1,6 @@
-const ENDPOINT = '/api/postman-import';
+import { apiUrl } from '../config';
+
+const ENDPOINT = apiUrl('/api/postman-import');
 
 const parsePostmanUrl = (value: string): URL | null => {
   try {

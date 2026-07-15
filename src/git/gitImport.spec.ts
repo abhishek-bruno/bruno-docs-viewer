@@ -14,7 +14,8 @@ describe('runGitImport', () => {
     const out = await runGitImport({ gitUrl: 'https://github.com/o/r.git', path: '' });
     expect(out).toEqual({ kind: 'collection', name: 'Demo', opencollection: 'name: Demo\n' });
     const [url, init] = fetchMock.mock.calls[0];
-    expect(url).toBe('/api/git-import');
+    // Endpoint path; a configured VITE_API_BASE_URL may prefix an origin.
+    expect(url).toMatch(/\/api\/git-import$/);
     expect(JSON.parse(init.body)).toEqual({ gitUrl: 'https://github.com/o/r.git', path: '' });
   });
 

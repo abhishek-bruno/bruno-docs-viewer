@@ -283,8 +283,10 @@ Expected: PASS (tsc + vite build succeed, no type errors).
 - [ ] **Step 4: Manually verify OpenAPI renders via a repo/URL source**
 
 Run: `npm run dev`
-Open: `http://localhost:5173/?gist_url=https%3A%2F%2Fraw.githubusercontent.com%2FOAI%2FOpenAPI-Specification%2Fmain%2Fexamples%2Fv3.0%2Fpetstore.yaml`
+Open: `http://localhost:5173/?gist_url=https%3A%2F%2Fraw.githubusercontent.com%2FOAI%2FOpenAPI-Specification%2Fmain%2F_archive_%2Fschemas%2Fv3.0%2Fpass%2Fpetstore.yaml`
+(Or any live OpenAPI spec on a CORS-open host, e.g. `https://petstore3.swagger.io/api/v3/openapi.json`.)
 Expected: the Swagger Petstore renders in the docs viewer (its operations appear), proving a non-OpenCollection source is now sniffed and converted client-side. Then open any existing OpenCollection gist/repo URL and confirm it still renders unchanged (identity path).
+Note: conversion was additionally verified end-to-end in Node against both live specs above (real spec -> `openApiToBruno` -> `brunoToOpenCollection` -> valid OpenCollection YAML).
 
 - [ ] **Step 5: Commit**
 

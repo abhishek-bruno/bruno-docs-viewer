@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { decideSource, type SourcePointers } from '../sources/sourceParams';
 import { loadCollectionText, CollectionFetchError } from '../sources/loader';
+import { resolveToOpenCollection } from '../collection/resolve';
 import { recordRecentLink } from '../storage/recentLinks';
 import { parseCollectionTitle } from '../storage/localUpload';
 import { DocsRenderer } from './DocsRenderer';
@@ -16,10 +17,13 @@ export function SourceView({ source }: { source: SourcePointers }) {
     let active = true;
     (async () => {
       try {
-        const text = await loadCollectionText(source);
+        const raw = await loadCollectionText(source);
+        const text = await resolveToOpenCollection(raw);
         void recordRecentLink(source, parseCollectionTitle(text));
         if (active) setState({ status: 'ready', text });
       } catch (err) {
+        // A convert failure is not a CollectionFetchError, so it surfaces as
+        // the generic 'unknown' error state, same as before for bad bytes.
         const kind: ErrorKind = err instanceof CollectionFetchError ? (err.kind as ErrorKind) : 'unknown';
         if (active) setState({ status: 'error', kind });
       }

@@ -100,6 +100,10 @@ undocumented and subject to change and to Postman's terms. A server-side SSRF gu
 ## Features
 
 - View OpenCollection collections from a GitHub gist or repo, client-side.
+- Renders more than OpenCollection: any client-fetched source (gist, repo, raw
+  URL, local upload) is sniffed and, if it is an OpenAPI 3.x or Swagger 2.0
+  spec, converted to OpenCollection in the browser before rendering. Postman
+  collections still convert server-side (their host blocks CORS).
 - Import and view public Postman collections (plus optional environments), no key.
 - Browser-local upload: paste or drop a YAML file, kept in IndexedDB and viewable
   via `?local=<key>`. Never sent to a server.

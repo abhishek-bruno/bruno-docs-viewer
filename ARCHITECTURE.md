@@ -18,6 +18,10 @@ src/
     sourceParams.ts      param vocabulary: parse, build, candidate URLs, deeplink
     loader.ts            fetch a source's YAML (gist-first), typed CollectionFetchError
 
+  collection/            "what format is this, and make it OpenCollection"
+    format.ts            sniffFormat(text): opencollection | openapi
+    resolve.ts           resolveToOpenCollection(text): sniff + convert (lazy converters import)
+
   postman/               Postman import feature (framework-agnostic)
     postmanImport.ts     URL detection, share params, runPostmanImport()
 
@@ -55,8 +59,16 @@ netlify/functions/
 Dependency direction: `ui` and `App` depend on `sources`, `postman`, `storage`,
 `config`, `samples`. `storage` modules depend only on `collectionStore` (and
 `sources` for key building). `sources`, `postman`, and `config` depend on nothing
-internal. No cycles. The `sources`, `storage`, and `postman` layers are plain
-TypeScript (no React), so they are unit-tested without a DOM.
+internal. No cycles. The `sources`, `storage`, `postman`, and `collection`
+layers are plain TypeScript (no React), so they are unit-tested without a DOM.
+
+Every client-fetched document flows through `collection/resolve.ts` before it
+reaches `<DocsRenderer>`: `SourceView` (after `loadCollectionText`) and
+`LocalUploadView` (after `readLocalUpload`) both call `resolveToOpenCollection`,
+which sniffs the format and converts non-OpenCollection specs (currently OpenAPI)
+to OpenCollection YAML, lazily importing `@usebruno/converters` only when a
+conversion is actually needed. Postman remains on its own server path because
+Postman's host blocks CORS; the format is known there, so it needs no sniffer.
 
 ## Routing (`App.tsx`)
 

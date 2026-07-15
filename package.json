@@ -12,7 +12,9 @@
   },
   "dependencies": {
     "@usebruno/converters": "^0.21.0",
+    "@usebruno/filestore": "^0.10.0",
     "idb": "^8.0.3",
+    "isomorphic-git": "^1.38.7",
     "js-yaml": "^4.1.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"

@@ -104,6 +104,12 @@ undocumented and subject to change and to Postman's terms. A server-side SSRF gu
   URL, local upload) is sniffed and, if it is an OpenAPI 3.x or Swagger 2.0
   spec, converted to OpenCollection in the browser before rendering. Postman
   collections still convert server-side (their host blocks CORS).
+- View a **native Bruno collection** from a public git repo (GitHub / GitLab /
+  Bitbucket / self-hosted) — a `.bru` or `.yml` tree, not a single
+  `opencollection.yml`. A serverless function clones the repo, loads the
+  collection (reusing `@usebruno/cli`'s loader), and converts it to
+  OpenCollection. A monorepo with several collections shows a picker; each
+  collection gets a shareable `?git_url=…&path=<dir>` URL.
 - Import and view public Postman collections (plus optional environments), no key.
 - Browser-local upload: paste or drop a YAML file, kept in IndexedDB and viewable
   via `?local=<key>`. Never sent to a server.
@@ -118,14 +124,19 @@ undocumented and subject to change and to Postman's terms. A server-side SSRF gu
   collection with its environment) to try the viewer with one click.
 - Friendly error states, including a private-collection / CORS path.
 
-## Serverless function
+## Serverless functions
 
-One function backs the Postman import, with the logic shared across hosts:
+Two functions, each a host-agnostic core with thin Vercel + Netlify adapters:
 
-- `api/lib/import-core.js`: the fetch + map + convert pipeline (host-agnostic).
-- `api/postman-import.js`: Vercel handler (`export default (req, res)`).
-- `netlify/functions/postman-import.mjs`: Netlify function (v2). `netlify.toml`
-  redirects `/api/postman-import` to it.
+- **Postman import** — `api/lib/import-core.js` (fetch + map + convert); handlers
+  `api/postman-import.js` (Vercel) and `netlify/functions/postman-import.mjs`.
+- **Git repo import** — `api/lib/git-core.js` clones the repo with `isomorphic-git`
+  into a temp dir (`api/lib/git-clone.js`, with an SSRF guard), discovers + loads
+  collections via the ported `@usebruno/cli` loader (`api/lib/collection-loader.js`),
+  and converts with `brunoToOpenCollection`. Handlers `api/git-import.js` (Vercel)
+  and `netlify/functions/git-import.mjs`. Returns a single OpenCollection YAML, or
+  a `{ name, path }[]` list for a monorepo. `netlify.toml` redirects `/api/*` to
+  each. Self-hosted git hosts are enabled with `GIT_IMPORT_ALLOWED_HOSTS`.
 
 Both run on the Node runtime (required by `@usebruno/converters`), not Edge.
 

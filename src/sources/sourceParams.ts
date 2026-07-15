@@ -26,6 +26,20 @@ export const EMPTY_SOURCE: SourcePointers = { gitUrl: '', rawUrl: '', openapiUrl
 
 const trim = (v: string | null): string => (v ? String(v).trim() : '');
 
+/** True for a git repo URL (github/gitlab/bitbucket web URL, or any `.git` URL). */
+export const isGitRepoUrl = (input: string): boolean => {
+  const value = trim(input);
+  try {
+    const u = new URL(value);
+    if (u.protocol !== 'https:') return false;
+    const host = u.hostname.toLowerCase();
+    if (host === 'github.com' || host === 'gitlab.com' || host === 'bitbucket.org') return true;
+    return /\.git(\/|$)/i.test(u.pathname);
+  } catch {
+    return false;
+  }
+};
+
 /** Validate and normalize a raw document URL (OpenCollection or OpenAPI). */
 export const normalizeYamlDocumentUrl = (input: string): string | null => {
   const value = trim(input);

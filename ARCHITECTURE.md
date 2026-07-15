@@ -47,14 +47,22 @@ src/
 
 api/                     serverless (host-agnostic core + Vercel adapter)
   lib/
-    import-core.js       fetch + map + convert pipeline
+    import-core.js       Postman: fetch + map + convert pipeline
     postman.js           keyless Postman fetch + SSRF guard (assertPostmanHost)
     mapper.js            internal Postman model -> v2.1 export shape
-  postman-import.js      Vercel handler
+    git-core.js          Git: clone -> discover -> load -> convert pipeline
+    git-clone.js         URL normalize + SSRF guard + isomorphic-git clone to temp dir
+    collection-loader.js dir -> collection JSON (ported from @usebruno/cli) + findCollections
+  postman-import.js      Vercel handler (Postman)
+  git-import.js          Vercel handler (Git)
 
 netlify/functions/
   postman-import.mjs     Netlify v2 adapter (wraps api/lib/import-core.js)
+  git-import.mjs         Netlify v2 adapter (wraps api/lib/git-core.js)
 ```
+
+Frontend `src/git/gitImport.ts` POSTs to `/api/git-import`; `src/ui/CollectionPicker.tsx`
+renders the monorepo chooser.
 
 Dependency direction: `ui` and `App` depend on `sources`, `postman`, `storage`,
 `config`, `samples`. `storage` modules depend only on `collectionStore` (and
@@ -144,6 +152,22 @@ and on a miss POSTs `{collectionUrl, environmentUrls}` to `/api/postman-import`.
 Server (`api/lib/import-core.js`): resolve uid -> keyless fetch (guarded by
 `assertPostmanHost`) -> map to v2.1 -> `@usebruno/converters` -> OpenCollection
 YAML. The Vercel and Netlify entrypoints are thin adapters over this one function.
+
+## Git repo import flow
+
+For a `git_url` repo source, `<SourceView>` first tries the fast GitHub
+`opencollection.yml` fetch (`loader.ts`). When that yields nothing — a native
+`.bru`/`.yml` repo (404) or a non-GitHub host (no raw candidate) — it falls back
+to `src/git/gitImport.ts`'s `runGitImport`, cache-first via `importCache`
+(`git:<url>|<path>`).
+
+Server (`api/lib/git-core.js`): `normalizeGitSource` -> `cloneToTempDir`
+(isomorphic-git, shallow, SSRF-guarded) -> `findCollections` walks for
+`bruno.json` / `opencollection.yml` roots. With a targeted `path` (or a single
+collection) it loads that dir via the ported `createCollectionJsonFromPathname`
+and `brunoToOpenCollection` -> OpenCollection YAML; a monorepo with several
+returns `{ name, path }[]`, which `<CollectionPicker>` renders as shareable
+`?git_url=…&path=<dir>` links. The temp clone is always removed afterward.
 
 ## Testing
 

@@ -8,3 +8,9 @@
   to = "/.netlify/functions/postman-import"
   status = 200
   force = true
+
+[[redirects]]
+  from = "/api/git-import"
+  to = "/.netlify/functions/git-import"
+  status = 200
+  force = true

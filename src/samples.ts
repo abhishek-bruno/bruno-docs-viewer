@@ -20,9 +20,13 @@ const PM_ENVIRONMENT =
 // via the dedicated `openapi_url` slot so the format is declared upfront.
 const OPENAPI_SPEC = 'https://petstore3.swagger.io/api/v3/openapi.json';
 
+// A native Bruno collection in a public GitHub repo (a .bru tree at a subdir).
+// The git-import function clones it and converts to OpenCollection.
+const GIT_REPO = 'https://github.com/bruno-collections/bruno-cli-docker/tree/main/collection';
+
 export const SAMPLES: Sample[] = [
   {
-    label: 'Hotel Booking API',
+    label: 'Hotel Booking API (Gist)',
     sublabel: 'https://gist.github.com/abhishek-bruno/6037ec28edf197eeb11b09606fda7371',
     href: (pathname) => `${pathname}?gist=${GIST_ID}`
   },
@@ -32,7 +36,12 @@ export const SAMPLES: Sample[] = [
     href: (pathname) => `${pathname}?openapi_url=${encodeURIComponent(OPENAPI_SPEC)}`
   },
   {
-    label: 'Microsoft Graph',
+    label: 'Bruno collection (Git repo)',
+    sublabel: 'github.com/bruno-collections/bruno-cli-docker',
+    href: (pathname) => `${pathname}?git_url=${encodeURIComponent(GIT_REPO)}`
+  },
+  {
+    label: 'Microsoft Graph (Postman)',
     sublabel: 'https://www.postman.com/microsoftgraph/microsoft-graph/collection/zzaccpr/microsoft-graph',
     href: (pathname) => buildPostmanShareUrl(pathname, PM_COLLECTION, [PM_ENVIRONMENT])
   }

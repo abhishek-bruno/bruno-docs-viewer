@@ -24,3 +24,18 @@ export function sniffFormat(text: string): CollectionFormat {
   }
   return 'opencollection';
 }
+
+/**
+ * True when the text is an UNBUNDLED OpenCollection root (`bundled: false`) —
+ * a collection whose requests live in sibling files, not a self-contained
+ * single-file document. Such a repo must be cloned + assembled (git-import),
+ * not rendered directly.
+ */
+export function isUnbundledOpenCollection(text: string): boolean {
+  try {
+    const doc = yaml.load(text) as Record<string, unknown> | null;
+    return !!doc && typeof doc === 'object' && doc.bundled === false;
+  } catch {
+    return false;
+  }
+}

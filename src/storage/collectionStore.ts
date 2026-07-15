@@ -5,7 +5,7 @@ const STORE = 'collections';
 // History cap. When exceeded, the least-recently-opened entries are evicted.
 const MAX_ENTRIES = 50;
 
-export type CollectionKind = 'upload' | 'link' | 'postman';
+export type CollectionKind = 'upload' | 'link' | 'postman' | 'git';
 
 export interface StoredCollection {
   key: string;

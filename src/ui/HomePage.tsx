@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { normalizeYamlDocumentUrl, buildShareViewerUrl } from '../sources/sourceParams';
+import { normalizeYamlDocumentUrl, isGitRepoUrl, buildShareViewerUrl } from '../sources/sourceParams';
 import { buildLocalUploadUrl, saveLocalUpload } from '../storage/localUpload';
 import { listCollections, deleteCollection, clearCollections, type StoredCollection } from '../storage/collectionStore';
 import { isPostmanCollectionUrl, isPostmanUrl } from '../postman/postmanImport';
@@ -35,6 +35,11 @@ export function HomePage() {
     }
     if (isPostmanUrl(value)) {
       setError('That is a Postman link but not a collection. Paste a Postman collection URL (…/collection/…).');
+      return;
+    }
+    if (isGitRepoUrl(value)) {
+      setError(null);
+      window.location.assign(buildShareViewerUrl({ gitUrl: value, rawUrl: '', openapiUrl: '', gist: '', path: '' }));
       return;
     }
     const rawUrl = normalizeYamlDocumentUrl(value);
@@ -107,7 +112,7 @@ export function HomePage() {
           <header className="home-hero">
             <img className="state-logo" src={LOGO_URL} alt="Bruno" />
             <h1>Bruno Docs Viewer</h1>
-            <p className="home-lead">Supports OpenCollection and OpenAPI files, and public Postman collection links</p>
+            <p className="home-lead">Supports OpenCollection &amp; OpenAPI files, Bruno git repos, and public Postman collection links</p>
           </header>
 
           <section className="home-panel">
@@ -121,7 +126,7 @@ export function HomePage() {
                   autoCorrect="off"
                   autoCapitalize="off"
                   spellCheck={false}
-                  placeholder="Paste an OpenCollection, OpenAPI, or public Postman collection URL"
+                  placeholder="Paste an OpenCollection, OpenAPI, Bruno git repo, or Postman collection URL"
                 />
                 <button type="submit" className="btn btn-primary home-submit">
                   View docs

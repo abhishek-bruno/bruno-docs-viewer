@@ -3,6 +3,26 @@ import { getCollection, putCollection, touchCollection } from './collectionStore
 export const postmanCacheKey = (collectionUrl: string, environmentUrls: string[]): string =>
   `postman:${collectionUrl.trim()}|${environmentUrls.map((u) => u.trim()).sort().join(',')}`;
 
+export const gitCacheKey = (gitUrl: string, path: string): string =>
+  `git:${gitUrl.trim()}|${(path || '').trim()}`;
+
+export const cacheGitImport = async (
+  key: string,
+  { title, subtitle = 'Git repository', href, yaml }: { title: string; subtitle?: string; href: string; yaml: string }
+): Promise<void> => {
+  const now = Date.now();
+  await putCollection({
+    key,
+    kind: 'git',
+    title,
+    subtitle,
+    href,
+    savedAt: now,
+    lastOpenedAt: now,
+    yaml
+  });
+};
+
 export const getCachedImport = async (key: string): Promise<string | null> =>
   (await getCollection(key))?.yaml ?? null;
 

@@ -27,6 +27,15 @@ body,
   height: 100%;
 }
 
+.viewer-actions {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 9999;
+  display: flex;
+  gap: 0.5rem;
+}
+
 /* Covers the renderer container until the CDN bundle has mounted. */
 .state-overlay {
   position: absolute;
@@ -155,15 +164,6 @@ body,
   bottom: 1.5rem;
   right: 1.5rem;
   z-index: 9999;
-}
-
-.viewer-actions {
-  position: fixed;
-  bottom: 1.5rem;
-  right: 1.5rem;
-  z-index: 9999;
-  display: flex;
-  gap: 0.5rem;
 }
 
 .home {

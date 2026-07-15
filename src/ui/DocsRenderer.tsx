@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { getRequestIdFromHash, type SourcePointers } from '../sources/sourceParams';
+import { getRequestIdFromHash, hasAnySource, buildFetchDeeplinkUrl, type SourcePointers } from '../sources/sourceParams';
 import { loadRendererAssets, waitForRenderer } from './rendererAssets';
 
 type Phase = 'loading' | 'ready' | 'error';
@@ -26,6 +26,11 @@ export function DocsRenderer({ text, source }: { text: string; source: SourcePoi
         target: containerRef.current,
         opencollection: text,
         gitCollectionUrl: source.gitUrl || undefined,
+        // Let the renderer show "Open in Bruno" in its header for any shareable
+        // source (OpenAPI, gist, raw, repo). Uploads have no source, so no CTA.
+        openInBrunoHref: hasAnySource(source) ? buildFetchDeeplinkUrl(source) : undefined,
+        // Renderer shows a home button at the far left of its header.
+        backToHomeHref: window.location.pathname || '/',
         initialRequestId: getRequestIdFromHash()
       });
       setPhase('ready');
@@ -54,6 +59,9 @@ export function DocsRenderer({ text, source }: { text: string; source: SourcePoi
         </div>
       )}
 
+      {/* Floating fallback: the renderer also shows a header home button when the
+          CDN oc-docs bundle supports `backToHomeHref`. Kept until that ships so
+          there's always a way back. */}
       <div className="viewer-actions">
         <a className="btn btn-secondary" href={window.location.pathname || '/'}>
           Back to home

@@ -41,7 +41,7 @@ src/
     PostmanView.tsx      ?pm= view (cache-first import)
     SourceView.tsx       gist/repo/raw view: fetch, resolve, or git-import fallback
     CollectionPicker.tsx monorepo chooser (git repo with several collections)
-    DocsRenderer.tsx     mounts the renderer (openInBrunoHref/backToHomeHref) + floating back-to-home
+    DocsRenderer.tsx     mounts the renderer (openInBrunoHref/backToHomeHref) + prod-only floating back-to-home fallback
     States.tsx           <Loading> and <Message> states
     RecentList.tsx       shared clickable list of stored collections
     HistoryPanel.tsx     full history as a second column: remove one / clear all

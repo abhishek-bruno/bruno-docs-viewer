@@ -28,7 +28,7 @@ export function DocsRenderer({ text, source, extraActions, openInBrunoHref }: { 
         gitCollectionUrl: source.gitUrl || undefined,
         // Explicit href wins; else derive from a shareable source (none for uploads).
         openInBrunoHref: openInBrunoHref ?? (hasAnySource(source) ? buildFetchDeeplinkUrl(source) : undefined),
-        backToHomeHref: window.location.pathname || '/',
+        backToHomeHref: '/',
         initialRequestId: getRequestIdFromHash()
       });
       setPhase('ready');
@@ -51,18 +51,21 @@ export function DocsRenderer({ text, source, extraActions, openInBrunoHref }: { 
         <div className="state state-overlay">
           <p className="state-loading-message">Couldn't load the viewer</p>
           <p className="state-loading-hint">The docs renderer failed to load. Check your connection and try again.</p>
-          <a className="btn btn-primary" href={window.location.pathname || '/'}>
+          <a className="btn btn-primary" href="/">
             Go to Home
           </a>
         </div>
       )}
 
-      {/* Floating fallback until the CDN renderer's header home button ships. */}
       <div className="viewer-actions">
         {extraActions}
-        <a className="btn btn-secondary" href={window.location.pathname || '/'}>
-          Back to home
-        </a>
+        {/* Home fallback, prod only: the CDN renderer doesn't yet honor
+            backToHomeHref, but the local renderer does. Remove once it ships. */}
+        {import.meta.env.PROD && (
+          <a className="btn btn-secondary" href="/">
+            Back to home
+          </a>
+        )}
       </div>
     </div>
   );

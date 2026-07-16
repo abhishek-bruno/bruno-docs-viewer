@@ -28,10 +28,12 @@ On load, `src/App.tsx` routes on the query string, in order:
    below); there is also a local file upload. With no history yet, it shows a few
    clickable **samples**.
 
-Each view renders `<DocsRenderer>`, which lazily loads the CDN bundle, mounts the
-renderer into a container node, and shows a floating **Back to home** button.
-Navigation between views is full-page
-(`window.location.assign`), which keeps every view shareable by URL.
+Each view renders `<DocsRenderer>`, which lazily loads the CDN bundle and mounts the
+renderer into a container node. The renderer's header carries the home button
+(`backToHomeHref`) and, for a shareable source, **Open in Bruno**. A floating
+**Back to home** fallback also shows in production until the CDN renderer honors
+`backToHomeHref`. Navigation between views is full-page (`window.location.assign`),
+which keeps every view shareable by URL.
 
 The renderer is loaded lazily from the CDN (`<CDN_BASE>/docs/index.{js,css}`) only
 when a collection renders, and the raw YAML is handed to it as a string.
@@ -114,9 +116,9 @@ imports the converted collection through its normal snapshot path and the
 postman.com fetch/convert stays server-side (nothing Postman-specific in the
 desktop app).
 
-The rendered page shows a floating **Back to home** button. The page URL itself is
-the shareable link (`?pm=…&pe=…` for Postman, the source params for gist/repo);
-local uploads keep their `?local=<key>` URL, which is browser-local only.
+The page URL itself is the shareable link (`?pm=…&pe=…` for Postman, the source
+params for gist/repo); local uploads keep their `?local=<key>` URL, which is
+browser-local only.
 
 The fetch runs server-side because Postman's keyless `_api/*` endpoints send no
 CORS headers. The official `api.getpostman.com` requires a key and is not used, so

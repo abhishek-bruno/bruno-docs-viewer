@@ -42,7 +42,7 @@ export function Message({
         </a>
       )}
       {action.type === 'go-home' && (
-        <a className="btn btn-primary" href={window.location.pathname || '/'}>
+        <a className="btn btn-primary" href="/">
           Go to Home
         </a>
       )}

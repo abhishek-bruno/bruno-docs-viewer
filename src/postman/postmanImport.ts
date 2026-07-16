@@ -1,6 +1,5 @@
+import yaml from 'js-yaml';
 import { apiUrl } from '../config';
-
-const ENDPOINT = apiUrl('/api/postman-import');
 
 const parsePostmanUrl = (value: string): URL | null => {
   try {
@@ -45,15 +44,37 @@ export const parsePostmanShareParams = (search: URLSearchParams): { collectionUr
   return { collectionUrl: fromPostmanPath(pm), environmentUrls: search.getAll('pe').map(fromPostmanPath) };
 };
 
+/**
+ * Absolute URL of the postman-import endpoint returning this collection as
+ * OpenCollection YAML (GET). Used both by the viewer's own fetch and as the
+ * `raw_url` in the Open-in-Bruno deeplink, so the desktop imports via its
+ * existing snapshot path (no Postman API in the app). `origin` is injectable
+ * for tests; at runtime it defaults to the current origin.
+ */
+export const buildPostmanImportUrl = (
+  collectionUrl: string,
+  environmentUrls: string[],
+  origin: string = typeof window !== 'undefined' ? window.location.origin : ''
+): string => {
+  const params = new URLSearchParams();
+  if (collectionUrl) params.set('pm', collectionUrl);
+  (environmentUrls || []).forEach((u) => { if (u) params.append('pe', u); });
+  const rel = `${apiUrl('/api/postman-import')}?${params.toString()}`;
+  return /^https?:/i.test(rel) ? rel : new URL(rel, origin).toString();
+};
+
 export const runPostmanImport = async (
   { collectionUrl, environmentUrls }: { collectionUrl: string; environmentUrls: string[] }
 ): Promise<{ name: string; opencollection: string }> => {
-  const res = await fetch(ENDPOINT, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ collectionUrl, environmentUrls })
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok || !data.ok) throw new Error(data.error || `Import failed (${res.status}).`);
-  return { name: data.name, opencollection: data.opencollection };
+  const res = await fetch(buildPostmanImportUrl(collectionUrl, environmentUrls));
+  const text = await res.text();
+  if (!res.ok) throw new Error(text || `Import failed (${res.status}).`);
+  let name = 'Postman Collection';
+  try {
+    const doc = yaml.load(text) as { info?: { name?: string } } | undefined;
+    if (doc?.info?.name) name = doc.info.name;
+  } catch {
+    // Non-fatal: fall back to the default title; the renderer still gets the text.
+  }
+  return { name, opencollection: text };
 };

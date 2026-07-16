@@ -23,8 +23,7 @@ export const isPostmanEnvironmentUrl = (value: string): boolean => {
 };
 
 const POSTMAN_ORIGIN = 'https://www.postman.com';
-// Short refs (pm/pe) store just the postman.com path and expand back, keeping
-// the query string compact, like the g/r gist/repo refs.
+// pm/pe store just the postman.com path and expand back, keeping the query compact.
 const toPostmanPath = (url: string): string => {
   try { return new URL(url).pathname; } catch { return url; }
 };
@@ -44,13 +43,7 @@ export const parsePostmanShareParams = (search: URLSearchParams): { collectionUr
   return { collectionUrl: fromPostmanPath(pm), environmentUrls: search.getAll('pe').map(fromPostmanPath) };
 };
 
-/**
- * Absolute URL of the postman-import endpoint returning this collection as
- * OpenCollection YAML (GET). Used both by the viewer's own fetch and as the
- * `raw_url` in the Open-in-Bruno deeplink, so the desktop imports via its
- * existing snapshot path (no Postman API in the app). `origin` is injectable
- * for tests; at runtime it defaults to the current origin.
- */
+/** Endpoint that returns the collection as OpenCollection YAML (GET); also the deeplink `raw_url`. `origin` is injectable for tests. */
 export const buildPostmanImportUrl = (
   collectionUrl: string,
   environmentUrls: string[],
@@ -74,7 +67,7 @@ export const runPostmanImport = async (
     const doc = yaml.load(text) as { info?: { name?: string } } | undefined;
     if (doc?.info?.name) name = doc.info.name;
   } catch {
-    // Non-fatal: fall back to the default title; the renderer still gets the text.
+    /* keep the default name */
   }
   return { name, opencollection: text };
 };

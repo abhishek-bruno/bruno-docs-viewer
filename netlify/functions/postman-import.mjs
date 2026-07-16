@@ -20,7 +20,7 @@ export default async (req) => {
       status: 200,
       headers: {
         'Content-Type': 'text/yaml; charset=utf-8',
-        // Short cache so re-opening the same deeplink doesn't re-hit Postman every time.
+        // Cache so repeated opens don't re-hit Postman.
         'Cache-Control': 'public, max-age=300',
         ...CORS
       }

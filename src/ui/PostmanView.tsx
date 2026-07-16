@@ -47,8 +47,7 @@ export function PostmanView({ source }: { source: { collectionUrl: string; envir
   if (state.status === 'error') {
     return <Message title="Couldn't import from Postman" body={state.message} action={{ type: 'go-home' }} />;
   }
-  // Open in Bruno: deeplink whose raw_url points at the postman-import endpoint,
-  // so the desktop imports the same OpenCollection via its snapshot path.
+  // Deeplink imports the same OpenCollection: raw_url points at the postman-import endpoint.
   const openInBrunoHref = buildFetchDeeplinkUrl({
     ...EMPTY_SOURCE,
     rawUrl: buildPostmanImportUrl(source.collectionUrl, source.environmentUrls)
@@ -69,9 +68,7 @@ export function PostmanView({ source }: { source: { collectionUrl: string; envir
       {showEnvModal && (
         <PostmanEnvModal
           collectionUrl={source.collectionUrl}
-          // Always land on the canonical ?pm=&pe= form (root path), so adding
-          // environments works whether the view came from the prefix route or
-          // the query route.
+          // Land on the root ?pm=&pe= form regardless of how the view was opened.
           pathname="/"
           initialEnvs={source.environmentUrls}
           onClose={() => setShowEnvModal(false)}

@@ -7,11 +7,8 @@ type Phase = 'loading' | 'ready' | 'error';
 /**
  * Mounts the CDN docs renderer into a container node. The renderer bundle is
  * downloaded lazily, so a spinner overlay stays up until it has mounted.
- *
- * `extraActions` renders alongside the floating "Back to home" button (e.g. the
- * Postman view's "Import Postman environment").
  */
-export function DocsRenderer({ text, source, extraActions }: { text: string; source: SourcePointers; extraActions?: ReactNode }) {
+export function DocsRenderer({ text, source, extraActions, openInBrunoHref }: { text: string; source: SourcePointers; extraActions?: ReactNode; openInBrunoHref?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const started = useRef(false);
   const [phase, setPhase] = useState<Phase>('loading');
@@ -29,10 +26,8 @@ export function DocsRenderer({ text, source, extraActions }: { text: string; sou
         target: containerRef.current,
         opencollection: text,
         gitCollectionUrl: source.gitUrl || undefined,
-        // Let the renderer show "Open in Bruno" in its header for any shareable
-        // source (OpenAPI, gist, raw, repo). Uploads have no source, so no CTA.
-        openInBrunoHref: hasAnySource(source) ? buildFetchDeeplinkUrl(source) : undefined,
-        // Renderer shows a home button at the far left of its header.
+        // Explicit href wins; else derive from a shareable source (none for uploads).
+        openInBrunoHref: openInBrunoHref ?? (hasAnySource(source) ? buildFetchDeeplinkUrl(source) : undefined),
         backToHomeHref: window.location.pathname || '/',
         initialRequestId: getRequestIdFromHash()
       });
@@ -62,9 +57,7 @@ export function DocsRenderer({ text, source, extraActions }: { text: string; sou
         </div>
       )}
 
-      {/* Floating fallback: the renderer also shows a header home button when the
-          CDN oc-docs bundle supports `backToHomeHref`. Kept until that ships so
-          there's always a way back. */}
+      {/* Floating fallback until the CDN renderer's header home button ships. */}
       <div className="viewer-actions">
         {extraActions}
         <a className="btn btn-secondary" href={window.location.pathname || '/'}>

@@ -18,7 +18,7 @@ export async function importPostman({ collectionUrl, environmentUrls = [] } = {}
   const envUrls = Array.isArray(environmentUrls) ? environmentUrls.filter(Boolean) : [];
   const environments = [];
   for (const envUrl of envUrls) {
-    const envUid = resolveEnvironmentUid(envUrl);
+    const envUid = await resolveEnvironmentUid(envUrl);
     const envInternal = await fetchEnvironment(envUid);
     const brunoEnv = await postmanToBrunoEnvironment(internalEnvironmentToPostman(envInternal));
     environments.push(brunoEnv);

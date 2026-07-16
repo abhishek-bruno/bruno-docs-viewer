@@ -1,12 +1,13 @@
 import yaml from 'js-yaml';
 import { postmanToBruno, postmanToBrunoEnvironment, brunoToOpenCollection } from '@usebruno/converters';
 import {
-  resolveCollectionUid, resolveEnvironmentUid, fetchCollection, fetchEnvironment,
-  assertPostmanHost, parseWorkspaceRef, resolveWorkspace, listWorkspaceCollectionUids, fetchCollectionName
+  resolveCollectionUid, fetchCollection, fetchEnvironment,
+  assertPostmanHost, parseWorkspaceRef, resolveWorkspace, listWorkspaceCollectionUids, fetchCollectionName,
+  listWorkspaceEnvironments
 } from './postman.js';
 import { internalCollectionToV21, internalEnvironmentToPostman } from './mapper.js';
 
-export async function importPostman({ collectionUrl, environmentUrls = [] } = {}) {
+export async function importPostman({ collectionUrl } = {}) {
   if (!collectionUrl) {
     const err = new Error('collectionUrl is required.');
     err.status = 400;
@@ -18,13 +19,22 @@ export async function importPostman({ collectionUrl, environmentUrls = [] } = {}
   const v21 = internalCollectionToV21(internal);
   const { collection: bruno } = await postmanToBruno(v21, {});
 
-  const envUrls = Array.isArray(environmentUrls) ? environmentUrls.filter(Boolean) : [];
+  // Auto-include the workspace's public environments (best-effort): resolve the
+  // workspace from the collection URL, list its environments, fetch each one
+  // sequentially. If the workspace can't be resolved or Postman rate-limits
+  // (429), import the collection with whatever was fetched (possibly none).
   const environments = [];
-  for (const envUrl of envUrls) {
-    const envUid = await resolveEnvironmentUid(envUrl);
-    const envInternal = await fetchEnvironment(envUid);
-    const brunoEnv = await postmanToBrunoEnvironment(internalEnvironmentToPostman(envInternal));
-    environments.push(brunoEnv);
+  try {
+    const { handle, slug } = parseWorkspaceRef(collectionUrl);
+    if (handle && slug) {
+      const ws = await resolveWorkspace(handle, slug);
+      for (const env of await listWorkspaceEnvironments(ws.id)) {
+        const envInternal = await fetchEnvironment(env.id);
+        environments.push(await postmanToBrunoEnvironment(internalEnvironmentToPostman(envInternal)));
+      }
+    }
+  } catch {
+    // best-effort: import the collection without (further) environments
   }
   if (environments.length) bruno.environments = environments;
 

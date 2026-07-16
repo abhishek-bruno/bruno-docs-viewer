@@ -5,6 +5,7 @@ import { parsePostmanShareParams } from './postman/postmanImport';
 import { HomePage } from './ui/HomePage';
 import { LocalUploadView } from './ui/LocalUploadView';
 import { PostmanView } from './ui/PostmanView';
+import { PostmanWorkspaceView } from './ui/PostmanWorkspaceView';
 import { SourceView } from './ui/SourceView';
 
 /**
@@ -21,11 +22,13 @@ export function App() {
   // the pretty URL in the address bar.
   const prefix = parsePrefixPath(window.location.pathname, window.location.search);
   if (prefix) {
-    return prefix.kind === 'postman' ? (
-      <PostmanView source={{ collectionUrl: prefix.collectionUrl, environmentUrls: prefix.environmentUrls }} />
-    ) : (
-      <SourceView source={prefix.source} />
-    );
+    if (prefix.kind === 'postman') {
+      return <PostmanView source={{ collectionUrl: prefix.collectionUrl, environmentUrls: prefix.environmentUrls }} />;
+    }
+    if (prefix.kind === 'postman-workspace') {
+      return <PostmanWorkspaceView workspaceUrl={prefix.workspaceUrl} />;
+    }
+    return <SourceView source={prefix.source} />;
   }
 
   const search = new URLSearchParams(window.location.search);

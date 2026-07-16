@@ -27,7 +27,7 @@ const postJson = async (url, body) => {
   return res.json();
 };
 
-const assertPostmanHost = (url) => {
+export const assertPostmanHost = (url) => {
   let host;
   try { host = new URL(url).hostname; } catch { throw new Error('Invalid Postman URL.'); }
   if (!/(^|\.)postman\.com$/i.test(host)) throw new Error('Only postman.com URLs are supported.');
@@ -109,4 +109,47 @@ export const fetchEnvironment = async (uid) => {
   const env = find(body);
   if (!env) throw new Error('Postman returned an unexpected environment shape.');
   return env;
+};
+
+// { handle, slug } from a workspace URL like /<handle>/<slug>[/overview|/…].
+// Supports the /<handle>/workspace/<slug> variant too.
+export const parseWorkspaceRef = (url) => {
+  const segs = new URL(url).pathname.split('/').filter(Boolean);
+  if (segs[1] === 'workspace' && segs[2]) return { handle: segs[0], slug: segs[2] };
+  return { handle: segs[0] || '', slug: segs[1] || '' };
+};
+
+// handle + slug -> { id, name } via the (non-gated) ws/proxy workspaces service.
+export const resolveWorkspace = async (handle, slug) => {
+  const body = await postJson('https://www.postman.com/_api/ws/proxy', {
+    service: 'workspaces',
+    method: 'GET',
+    path: `/workspaces?handle=${encodeURIComponent(handle)}&slug=${encodeURIComponent(slug)}`
+  });
+  const ws = body && Array.isArray(body.data) && body.data[0];
+  if (!ws || !ws.id) throw new Error('Could not find that Postman workspace.');
+  return { id: ws.id, name: ws.name || 'Postman Workspace' };
+};
+
+// Public collection uids in a workspace, via the (non-gated) publishing service.
+export const listWorkspaceCollectionUids = async (workspaceId, limit = 50) => {
+  const body = await postJson('https://www.postman.com/_api/ws/proxy', {
+    service: 'publishing',
+    method: 'get',
+    path: `/v1/api/networkentity/collection?workspaceId=${encodeURIComponent(workspaceId)}&sortBy=forkCount&order=desc&limit=${limit}`
+  });
+  const rows = (body && Array.isArray(body.data) && body.data) || [];
+  return rows.map((r) => r && r.entityId).filter(Boolean);
+};
+
+// Light get-by-id (populate=false) for a collection's display name. Null if unreadable.
+export const fetchCollectionName = async (uid) => {
+  try {
+    const body = await fetchJson(`https://www.postman.com/_api/collection/${encodeURIComponent(uid)}?populate=false`);
+    const data = (body && body.data) || body || {};
+    const c = data.collection || {};
+    return (c.info && c.info.name) || data.name || c.name || null;
+  } catch {
+    return null;
+  }
 };

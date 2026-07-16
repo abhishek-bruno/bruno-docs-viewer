@@ -44,6 +44,11 @@ export function HomePage() {
       setPostmanUrl(value);
       return;
     }
+    if (intent.kind === 'postman-workspace') {
+      // Prefix route: /<workspace-url> -> PostmanWorkspaceView (the picker).
+      window.location.assign(`/${value.replace(/^https?:\/\//i, '')}`);
+      return;
+    }
     window.location.assign(buildShareViewerUrl(intent.source));
   };
 
@@ -108,7 +113,7 @@ export function HomePage() {
           <header className="home-hero">
             <img className="state-logo" src={LOGO_URL} alt="Bruno" />
             <h1>Bruno Docs Viewer</h1>
-            <p className="home-lead">Supports OpenCollection &amp; OpenAPI files, Bruno git repos, and public Postman collection links</p>
+            <p className="home-lead">Supports OpenCollection &amp; OpenAPI files, Bruno git repos, and public Postman collection or workspace links</p>
           </header>
 
           <section className="home-panel">
@@ -122,7 +127,7 @@ export function HomePage() {
                   autoCorrect="off"
                   autoCapitalize="off"
                   spellCheck={false}
-                  placeholder="Paste an OpenCollection, OpenAPI, Bruno git repo, or Postman collection URL"
+                  placeholder="Paste an OpenCollection, OpenAPI, Bruno git repo, or Postman collection/workspace URL"
                 />
                 <button type="submit" className="btn btn-primary home-submit">
                   View docs

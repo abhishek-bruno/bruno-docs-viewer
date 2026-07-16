@@ -1,8 +1,9 @@
 import { EMPTY_SOURCE, isGitRepoUrl, normalizeYamlDocumentUrl, type SourcePointers } from './sourceParams';
-import { isPostmanCollectionUrl } from '../postman/postmanImport';
+import { isPostmanCollectionUrl, isPostmanWorkspaceUrl } from '../postman/postmanImport';
 
 export type SourceIntent =
   | { kind: 'postman'; collectionUrl: string; environmentUrls: string[] }
+  | { kind: 'postman-workspace'; workspaceUrl: string }
   | { kind: 'source'; source: SourcePointers };
 
 /** A full source URL -> a routing intent, or null if unrecognized. */
@@ -12,6 +13,9 @@ export function classifySourceUrl(input: string): SourceIntent | null {
 
   if (isPostmanCollectionUrl(url)) {
     return { kind: 'postman', collectionUrl: url, environmentUrls: [] };
+  }
+  if (isPostmanWorkspaceUrl(url)) {
+    return { kind: 'postman-workspace', workspaceUrl: url };
   }
   if (isGitRepoUrl(url)) {
     return { kind: 'source', source: { ...EMPTY_SOURCE, gitUrl: url } };

@@ -22,6 +22,13 @@ export const isPostmanEnvironmentUrl = (value: string): boolean => {
   return !!u && /\/environment\//i.test(u.pathname);
 };
 
+/** A workspace URL: a postman.com URL with handle+slug that isn't a specific entity. */
+export const isPostmanWorkspaceUrl = (value: string): boolean => {
+  const u = parsePostmanUrl(value);
+  if (!u || /\/(collection|environment)\//i.test(u.pathname)) return false;
+  return u.pathname.split('/').filter(Boolean).length >= 2;
+};
+
 const POSTMAN_ORIGIN = 'https://www.postman.com';
 // pm/pe store just the postman.com path and expand back, keeping the query compact.
 const toPostmanPath = (url: string): string => {
@@ -54,6 +61,21 @@ export const buildPostmanImportUrl = (
   (environmentUrls || []).forEach((u) => { if (u) params.append('pe', u); });
   const rel = `${apiUrl('/api/postman-import')}?${params.toString()}`;
   return /^https?:/i.test(rel) ? rel : new URL(rel, origin).toString();
+};
+
+export interface PostmanWorkspaceCollection {
+  name: string;
+  url: string;
+}
+
+/** List a Postman workspace's public collections (for the picker). */
+export const fetchPostmanWorkspace = async (
+  workspaceUrl: string
+): Promise<{ name: string; collections: PostmanWorkspaceCollection[] }> => {
+  const res = await fetch(`${apiUrl('/api/postman-workspace')}?url=${encodeURIComponent(workspaceUrl)}`);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.ok) throw new Error(data.error || `Failed to list the workspace (${res.status}).`);
+  return { name: data.name, collections: data.collections || [] };
 };
 
 export const runPostmanImport = async (

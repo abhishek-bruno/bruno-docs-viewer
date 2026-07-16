@@ -2,23 +2,31 @@ import { importPostman } from '../../api/lib/import-core.js';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type'
 };
 
-const json = (obj, status) =>
-  new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json', ...CORS } });
-
 export default async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
-  if (req.method !== 'POST') return json({ ok: false, error: 'Use POST.' }, 405);
+  if (req.method !== 'GET') return new Response('Use GET.', { status: 405, headers: CORS });
+
+  const url = new URL(req.url);
+  const collectionUrl = url.searchParams.get('pm') || '';
+  const environmentUrls = url.searchParams.getAll('pe');
 
   try {
-    const body = await req.json().catch(() => ({}));
-    const result = await importPostman(body);
-    return json({ ok: true, ...result }, 200);
+    const { opencollection } = await importPostman({ collectionUrl, environmentUrls });
+    return new Response(opencollection, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/yaml; charset=utf-8',
+        // Short cache so re-opening the same deeplink doesn't re-hit Postman every time.
+        'Cache-Control': 'public, max-age=300',
+        ...CORS
+      }
+    });
   } catch (err) {
     const status = err && err.status ? err.status : 400;
-    return json({ ok: false, error: (err && err.message) || 'Import failed.' }, status);
+    return new Response((err && err.message) || 'Import failed.', { status, headers: CORS });
   }
 };

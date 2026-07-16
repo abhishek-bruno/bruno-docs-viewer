@@ -129,7 +129,7 @@ export function HomePage() {
                   autoCorrect="off"
                   autoCapitalize="off"
                   spellCheck={false}
-                  placeholder="Paste an OpenCollection, OpenAPI, Bruno git repo, or Postman collection/workspace URL"
+                  placeholder="Paste an OpenCollection, OpenAPI, Bruno git repo, or Postman public URL"
                 />
                 <button type="submit" className="btn btn-primary home-submit">
                   View docs
@@ -138,8 +138,7 @@ export function HomePage() {
 
               <p className="home-hint">
                 Tip: prefix any Postman or git collection link with{' '}
-                <code className="home-hint-code">{host}/</code> to open it here — e.g.{' '}
-                <code className="home-hint-code">{host}/github.com/org/repo</code>
+                <code className="home-hint-code">{host}/</code> to open it here. 
               </p>
 
               <div className="home-or" aria-hidden="true">

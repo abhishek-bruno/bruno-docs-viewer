@@ -109,11 +109,19 @@ export async function cloneToTempDir({ cloneUrl, ref }) {
     await git.clone({
       fs, http, dir, url: cloneUrl,
       ...(ref ? { ref } : {}),
-      singleBranch: true, depth: 1, noTags: true
+      singleBranch: true, depth: 1, noTags: true,
+      // Check out files in bounded batches rather than all at once, so a repo
+      // with many files doesn't exhaust the serverless open-file-descriptor
+      // limit (EMFILE) during checkout.
+      nonBlocking: true, batchSize: 100
     });
   } catch (err) {
     fs.rmSync(dir, { recursive: true, force: true });
-    fail(`Could not clone the repository: ${err.message}`, 502);
+    // isomorphic-git bundles per-file failures into a MultipleGitError whose
+    // own message is generic; surface the first underlying cause.
+    const causes = Array.isArray(err?.errors) ? err.errors : [];
+    const detail = causes.length ? `${causes[0]?.message || causes[0]} (${causes.length} errors)` : err.message;
+    fail(`Could not clone the repository: ${detail}`, 502);
   }
   return dir;
 }

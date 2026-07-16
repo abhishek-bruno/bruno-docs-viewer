@@ -99,9 +99,11 @@ On load, `parsePostmanShareParams` reads `pm`/`pe`, then:
 
 The serverless pipeline:
 
-1. Resolve the collection uid. A short-id workspace URL carries no uid, so the
-   function fetches the public page as a crawler and extracts the uid; a URL that
-   already carries a uid is used directly. Environment URLs carry the uid inline.
+1. Resolve the collection uid. A URL that already carries a full uid is used
+   directly; a short-id URL (`/collection/<shortId>/…`) is resolved in one call
+   via Postman's urlId service (`POST /_api/ws/proxy` with
+   `{service:"urlId", path:"/entity/entity-id?urlId=<shortId>&entityType=collection&profileSlug=<handle>"}`
+   → `entityId`). Environment URLs resolve the same way (uid inline, else urlId).
 2. Fetch the collection and environments keyless from Postman's internal
    `_api/collection/{uid}?populate=true` and `_api/environment/{uid}` endpoints.
 3. Map Postman's internal model to the v2.1 export shape (`api/lib/mapper.js`).

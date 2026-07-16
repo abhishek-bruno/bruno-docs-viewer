@@ -8,6 +8,7 @@ import { LOGO_URL } from '../config';
 import { SAMPLES } from '../samples';
 import { RecentList } from './RecentList';
 import { HistoryPanel } from './HistoryPanel';
+import { PostmanEnvModal } from './PostmanEnvModal';
 
 const RECENTS_SHOWN = 5;
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
@@ -15,6 +16,7 @@ const MAX_FILE_BYTES = 10 * 1024 * 1024;
 export function HomePage() {
   const [entries, setEntries] = useState<StoredCollection[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [postmanUrl, setPostmanUrl] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const pathname = window.location.pathname || '/';
   const host = window.location.host;
@@ -40,8 +42,12 @@ export function HomePage() {
       return;
     }
     setError(null);
-    if (intent.kind === 'postman' || intent.kind === 'postman-workspace') {
-      // Prefix route: /<url> -> PostmanView (import) or PostmanWorkspaceView (picker).
+    if (intent.kind === 'postman') {
+      setPostmanUrl(value);
+      return;
+    }
+    if (intent.kind === 'postman-workspace') {
+      // Prefix route: /<workspace-url> -> PostmanWorkspaceView (the picker).
       window.location.assign(`/${value.replace(/^https?:\/\//i, '')}`);
       return;
     }
@@ -260,6 +266,10 @@ export function HomePage() {
           />
         )}
       </div>
+
+      {postmanUrl && (
+        <PostmanEnvModal collectionUrl={postmanUrl} pathname={pathname} onClose={() => setPostmanUrl(null)} />
+      )}
     </div>
   );
 }

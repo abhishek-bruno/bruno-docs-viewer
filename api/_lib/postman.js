@@ -153,20 +153,3 @@ export const fetchCollectionName = async (uid) => {
     return null;
   }
 };
-
-// A workspace's public environments (id + name). POSTs the list endpoint with
-// no body. Works from Node/undici (unlike curl, which Cloudflare fingerprints).
-export const listWorkspaceEnvironments = async (workspaceId) => {
-  const res = await fetch(`https://www.postman.com/_api/list/environment?workspace=${encodeURIComponent(workspaceId)}`, {
-    method: 'POST',
-    headers: { 'User-Agent': UA, Accept: 'application/json' }
-  });
-  if (!res.ok) {
-    const err = new Error(`Postman environment list failed (${res.status})`);
-    err.status = res.status;
-    throw err;
-  }
-  const body = await res.json();
-  const rows = body && Array.isArray(body.data) ? body.data : [];
-  return rows.map((e) => ({ id: e.id, name: e.name })).filter((e) => e.id);
-};

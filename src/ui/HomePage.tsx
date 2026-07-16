@@ -19,6 +19,7 @@ export function HomePage() {
   const [postmanUrl, setPostmanUrl] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const pathname = window.location.pathname || '/';
+  const host = window.location.host;
 
   const reload = () => void listCollections().then(setEntries);
   useEffect(() => {
@@ -134,6 +135,12 @@ export function HomePage() {
                   View docs
                 </button>
               </div>
+
+              <p className="home-hint">
+                Tip: prefix any Postman or git collection link with{' '}
+                <code className="home-hint-code">{host}/</code> to open it here — e.g.{' '}
+                <code className="home-hint-code">{host}/github.com/org/repo</code>
+              </p>
 
               <div className="home-or" aria-hidden="true">
                 <span>or</span>

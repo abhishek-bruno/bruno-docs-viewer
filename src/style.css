@@ -285,6 +285,24 @@ body,
   padding: 1.375rem;
 }
 
+.home-hint {
+  margin: 0.7rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: #6b7280;
+  text-align: center;
+}
+
+.home-hint-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.76rem;
+  background: #f3f4f6;
+  color: #374151;
+  padding: 0.08rem 0.35rem;
+  border-radius: 4px;
+  word-break: break-all;
+}
+
 .home-form {
   width: 100%;
 }

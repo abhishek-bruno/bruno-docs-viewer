@@ -3,7 +3,7 @@ import { buildShareViewerUrl } from '../sources/sourceParams';
 import { classifySourceUrl } from '../sources/classifySource';
 import { buildLocalUploadUrl, saveLocalUpload } from '../storage/localUpload';
 import { listCollections, deleteCollection, clearCollections, type StoredCollection } from '../storage/collectionStore';
-import { isPostmanCollectionUrl, isPostmanUrl } from '../postman/postmanImport';
+import { isPostmanCollectionUrl, isPostmanUrl, isPostmanWorkspaceUrl } from '../postman/postmanImport';
 import { LOGO_URL } from '../config';
 import { SAMPLES } from '../samples';
 import { RecentList } from './RecentList';
@@ -29,9 +29,10 @@ export function HomePage() {
     e.preventDefault();
     const value = String(new FormData(e.currentTarget).get('yamlUrl') || '').trim();
 
-    // Reject a Postman link that isn't a collection, before generic classification.
-    if (!isPostmanCollectionUrl(value) && isPostmanUrl(value)) {
-      setError('That is a Postman link but not a collection. Paste a Postman collection URL (…/collection/…).');
+    // Reject a Postman link that's neither a collection nor a workspace (e.g. an
+    // environment link), before generic classification.
+    if (isPostmanUrl(value) && !isPostmanCollectionUrl(value) && !isPostmanWorkspaceUrl(value)) {
+      setError('That is a Postman link but not a collection or workspace. Paste a collection or workspace URL.');
       return;
     }
     const intent = classifySourceUrl(value);

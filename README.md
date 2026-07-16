@@ -86,9 +86,17 @@ Paste a public Postman collection URL (`https://www.postman.com/<workspace>/coll
 into the same home-page input. `isPostmanCollectionUrl` detects it and opens a
 modal to add optional Postman environment links. On submit the viewer navigates
 to a shareable short URL, `?pm=<collection>&pe=<env>…`, so the link reproduces
-the import when opened or shared. A non-collection Postman URL (e.g. an
-`…/environment/…` link) is rejected in the input, and environment fields must be
-`…/environment/…` URLs.
+the import when opened or shared. An environment link (`…/environment/…`) is
+rejected in the input, and environment fields must be `…/environment/…` URLs.
+
+Paste a **workspace** URL (`https://www.postman.com/<handle>/<slug>[/overview]`)
+and the viewer lists that workspace's public collections in a picker
+(`PostmanWorkspaceView`); selecting one opens it via `?pm=…`. Resolution uses
+only the non-gated endpoints: `ws/proxy` (`service:"workspaces"` for the
+workspace id, `service:"publishing"` for the collection uids) plus collection
+get-by-id for names, exposed as `GET /api/postman-workspace?url=…`. (Postman's
+`/_api/list/*` enumeration endpoints are Cloudflare-gated, so environments can't
+be auto-listed this way.)
 
 On load, `parsePostmanShareParams` reads `pm`/`pe`, then:
 
@@ -157,12 +165,16 @@ undocumented and subject to change and to Postman's terms. A server-side SSRF gu
 
 ## Serverless functions
 
-Two functions, each a host-agnostic core with thin Vercel + Netlify adapters:
+Three functions, each a host-agnostic core with thin Vercel + Netlify adapters:
 
 - **Postman import** — `api/lib/import-core.js` (fetch + map + convert); handlers
   `api/postman-import.js` (Vercel) and `netlify/functions/postman-import.mjs`. A
   `GET` (`?pm=&pe=`) returning `text/yaml`, used by both the viewer's render fetch
   and the Open-in-Bruno `raw_url` deeplink.
+- **Postman workspace** — `api/lib/import-core.js` `listPostmanWorkspace`; handlers
+  `api/postman-workspace.js` (Vercel) and `netlify/functions/postman-workspace.mjs`.
+  A `GET` (`?url=<workspace>`) returning `{ name, collections: [{ name, url }] }`
+  for the collection picker.
 - **Git repo import** — `api/lib/git-core.js` clones the repo with `isomorphic-git`
   into a temp dir (`api/lib/git-clone.js`, with an SSRF guard), discovers + loads
   collections via the ported `@usebruno/cli` loader (`api/lib/collection-loader.js`),

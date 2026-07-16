@@ -10,3 +10,6 @@ dist
 
 # gstack local state
 .gstack/
+
+# Local-only plans / notes (Layer 1)
+.claude/

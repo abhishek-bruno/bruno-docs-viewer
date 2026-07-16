@@ -107,6 +107,13 @@ The serverless pipeline:
    then `brunoToOpenCollection`.
 5. Return the OpenCollection document as YAML.
 
+The endpoint is a `GET /api/postman-import?pm=<collection>&pe=<env>…` that
+returns the OpenCollection as `text/yaml`. This same URL backs **Open in Bruno**
+on the Postman view: the deeplink sets `raw_url` to it, so the desktop app
+imports the converted collection through its normal snapshot path and the
+postman.com fetch/convert stays server-side (nothing Postman-specific in the
+desktop app).
+
 The rendered page shows a floating **Back to home** button. The page URL itself is
 the shareable link (`?pm=…&pe=…` for Postman, the source params for gist/repo);
 local uploads keep their `?local=<key>` URL, which is browser-local only.
@@ -149,7 +156,9 @@ undocumented and subject to change and to Postman's terms. A server-side SSRF gu
 Two functions, each a host-agnostic core with thin Vercel + Netlify adapters:
 
 - **Postman import** — `api/lib/import-core.js` (fetch + map + convert); handlers
-  `api/postman-import.js` (Vercel) and `netlify/functions/postman-import.mjs`.
+  `api/postman-import.js` (Vercel) and `netlify/functions/postman-import.mjs`. A
+  `GET` (`?pm=&pe=`) returning `text/yaml`, used by both the viewer's render fetch
+  and the Open-in-Bruno `raw_url` deeplink.
 - **Git repo import** — `api/lib/git-core.js` clones the repo with `isomorphic-git`
   into a temp dir (`api/lib/git-clone.js`, with an SSRF guard), discovers + loads
   collections via the ported `@usebruno/cli` loader (`api/lib/collection-loader.js`),

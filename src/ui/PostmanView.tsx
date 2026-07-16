@@ -3,14 +3,12 @@ import { EMPTY_SOURCE, buildFetchDeeplinkUrl } from '../sources/sourceParams';
 import { runPostmanImport, buildPostmanImportUrl } from '../postman/postmanImport';
 import { postmanCacheKey, getCachedImport, touchCachedImport, cachePostmanImport } from '../storage/importCache';
 import { DocsRenderer } from './DocsRenderer';
-import { PostmanEnvModal } from './PostmanEnvModal';
 import { Loading, Message } from './States';
 
 type State = { status: 'loading' } | { status: 'error'; message: string } | { status: 'ready'; yaml: string };
 
 export function PostmanView({ source }: { source: { collectionUrl: string; environmentUrls: string[] } }) {
   const [state, setState] = useState<State>({ status: 'loading' });
-  const [showEnvModal, setShowEnvModal] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -53,27 +51,5 @@ export function PostmanView({ source }: { source: { collectionUrl: string; envir
     rawUrl: buildPostmanImportUrl(source.collectionUrl, source.environmentUrls)
   });
 
-  return (
-    <>
-      <DocsRenderer
-        text={state.yaml}
-        source={EMPTY_SOURCE}
-        openInBrunoHref={openInBrunoHref}
-        extraActions={
-          <button type="button" className="btn btn-secondary" onClick={() => setShowEnvModal(true)}>
-            Import Postman environment
-          </button>
-        }
-      />
-      {showEnvModal && (
-        <PostmanEnvModal
-          collectionUrl={source.collectionUrl}
-          // Land on the root ?pm=&pe= form regardless of how the view was opened.
-          pathname="/"
-          initialEnvs={source.environmentUrls}
-          onClose={() => setShowEnvModal(false)}
-        />
-      )}
-    </>
-  );
+  return <DocsRenderer text={state.yaml} source={EMPTY_SOURCE} openInBrunoHref={openInBrunoHref} />;
 }

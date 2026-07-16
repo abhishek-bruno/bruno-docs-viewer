@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { EMPTY_SOURCE } from '../sources/sourceParams';
-import { runPostmanImport } from '../postman/postmanImport';
+import { EMPTY_SOURCE, buildFetchDeeplinkUrl } from '../sources/sourceParams';
+import { runPostmanImport, buildPostmanImportUrl } from '../postman/postmanImport';
 import { postmanCacheKey, getCachedImport, touchCachedImport, cachePostmanImport } from '../storage/importCache';
 import { DocsRenderer } from './DocsRenderer';
 import { PostmanEnvModal } from './PostmanEnvModal';
@@ -47,11 +47,19 @@ export function PostmanView({ source }: { source: { collectionUrl: string; envir
   if (state.status === 'error') {
     return <Message title="Couldn't import from Postman" body={state.message} action={{ type: 'go-home' }} />;
   }
+  // Open in Bruno: deeplink whose raw_url points at the postman-import endpoint,
+  // so the desktop imports the same OpenCollection via its snapshot path.
+  const openInBrunoHref = buildFetchDeeplinkUrl({
+    ...EMPTY_SOURCE,
+    rawUrl: buildPostmanImportUrl(source.collectionUrl, source.environmentUrls)
+  });
+
   return (
     <>
       <DocsRenderer
         text={state.yaml}
         source={EMPTY_SOURCE}
+        openInBrunoHref={openInBrunoHref}
         extraActions={
           <button type="button" className="btn btn-secondary" onClick={() => setShowEnvModal(true)}>
             Import Postman environment

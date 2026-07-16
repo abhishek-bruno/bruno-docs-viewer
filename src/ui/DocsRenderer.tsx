@@ -11,7 +11,7 @@ type Phase = 'loading' | 'ready' | 'error';
  * `extraActions` renders alongside the floating "Back to home" button (e.g. the
  * Postman view's "Import Postman environment").
  */
-export function DocsRenderer({ text, source, extraActions }: { text: string; source: SourcePointers; extraActions?: ReactNode }) {
+export function DocsRenderer({ text, source, extraActions, openInBrunoHref }: { text: string; source: SourcePointers; extraActions?: ReactNode; openInBrunoHref?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const started = useRef(false);
   const [phase, setPhase] = useState<Phase>('loading');
@@ -31,7 +31,7 @@ export function DocsRenderer({ text, source, extraActions }: { text: string; sou
         gitCollectionUrl: source.gitUrl || undefined,
         // Let the renderer show "Open in Bruno" in its header for any shareable
         // source (OpenAPI, gist, raw, repo). Uploads have no source, so no CTA.
-        openInBrunoHref: hasAnySource(source) ? buildFetchDeeplinkUrl(source) : undefined,
+        openInBrunoHref: openInBrunoHref ?? (hasAnySource(source) ? buildFetchDeeplinkUrl(source) : undefined),
         // Renderer shows a home button at the far left of its header.
         backToHomeHref: window.location.pathname || '/',
         initialRequestId: getRequestIdFromHash()

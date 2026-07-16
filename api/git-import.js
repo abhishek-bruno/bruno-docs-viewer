@@ -1,4 +1,4 @@
-import { importGitRepo } from './lib/git-core.js';
+import { importGitRepo } from './_lib/git-core.js';
 
 const readBody = async (req) => {
   if (req.body && typeof req.body === 'object') return req.body;

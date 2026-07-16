@@ -13,3 +13,4 @@ dist
 
 # Local-only plans / notes (Layer 1)
 .claude/
+.vercel

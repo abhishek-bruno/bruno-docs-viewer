@@ -1,4 +1,4 @@
-import { importPostman } from './lib/import-core.js';
+import { importPostman } from './_lib/import-core.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');

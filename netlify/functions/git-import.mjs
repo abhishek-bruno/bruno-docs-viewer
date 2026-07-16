@@ -1,4 +1,4 @@
-import { importGitRepo } from '../../api/lib/git-core.js';
+import { importGitRepo } from '../../api/_lib/git-core.js';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',

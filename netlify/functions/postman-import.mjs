@@ -1,4 +1,4 @@
-import { importPostman } from '../../api/lib/import-core.js';
+import { importPostman } from '../../api/_lib/import-core.js';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',

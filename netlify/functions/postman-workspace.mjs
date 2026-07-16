@@ -1,4 +1,4 @@
-import { listPostmanWorkspace } from '../../api/lib/import-core.js';
+import { listPostmanWorkspace } from '../../api/_lib/import-core.js';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
